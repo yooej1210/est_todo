@@ -1,0 +1,27 @@
+@use "../base/variables" as *;
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid $border;
+  border-radius: 10px;
+  outline: none;
+  background: #fff;
+
+  &:focus {
+    border-color: rgba($primary, 0.75);
+    box-shadow: 0 0 0 4px rgba($primary, 0.12);
+  }
+}
+
+.helper {
+  margin-top: 6px;
+  font-size: 12px;
+  color: $muted;
+}
+
+.error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #ef4444;
+}

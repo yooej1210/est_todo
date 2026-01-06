@@ -1,0 +1,22 @@
+@use "../base/variables" as *;
+
+.btn {
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: $primary;
+  color: #fff;
+  font-weight: 700;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn--ghost {
+  background: transparent;
+  color: $primary;
+}

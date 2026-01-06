@@ -1,0 +1,15 @@
+@mixin flex-center($dir: row) {
+  display: flex;
+  flex-direction: $dir;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin respond($bp) {
+  @if $bp == md {
+    @media (max-width: 960px) { @content; }
+  }
+  @if $bp == sm {
+    @media (max-width: 640px) { @content; }
+  }
+}

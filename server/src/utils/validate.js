@@ -7,6 +7,8 @@ function validate(schema) {
     });
 
     if (!result.success) {
+      console.log("VALIDATION ERROR:", result.error.issues);
+
       return res.status(400).json({
         message: "Validation Error",
         errors: result.error.issues.map((i) => ({

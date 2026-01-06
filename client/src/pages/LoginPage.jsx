@@ -1,0 +1,51 @@
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import AuthLayout from "../components/AuthLayout";
+import Input from "../components/Input";
+import Button from "../components/Button";
+import { loginApi } from "../api/auth.api";
+
+export default function LoginPage() {
+  const nav = useNavigate();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const onChange = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setErr("");
+    setLoading(true);
+    try {
+      const data = await loginApi(form);
+
+      // ✅ 백엔드가 accessToken을 어떤 키로 주는지에 맞춰 조정
+      const accessToken = data.accessToken || data.token || data?.data?.accessToken;
+      if (!accessToken) throw new Error("토큰이 응답에 없습니다.");
+
+      localStorage.setItem("accessToken", accessToken);
+      nav("/", { replace: true });
+    } catch (e2) {
+      setErr(e2?.response?.data?.message || e2.message || "로그인에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthLayout>
+      <form className="form" onSubmit={onSubmit}>
+        <Input label="이메일" placeholder="아이디를 입력하세요." value={form.email} onChange={onChange("email")} />
+        <Input label="비밀번호" type="password" placeholder="비밀번호를 입력하세요." value={form.password} onChange={onChange("password")} />
+        {err && <div className="error">{err}</div>}
+        <Button disabled={loading}>{loading ? "로그인 중..." : "로그인"}</Button>
+
+        <div className="footer">
+          <Link to="/signup">회원가입하기</Link>
+          <a href="#" onClick={(e)=>e.preventDefault()}>비밀번호 찾기</a>
+        </div>
+      </form>
+    </AuthLayout>
+  );
+}

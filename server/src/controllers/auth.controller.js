@@ -1,6 +1,7 @@
 const authService = require("../services/auth.service");
 
 async function signup(req, res) {
+  console.log("SIGNUP BODY:", req.body);
   const { email, nickname, password } = req.validated.body;
   const result = await authService.signup({ email, nickname, password });
   res.status(201).json(result);
