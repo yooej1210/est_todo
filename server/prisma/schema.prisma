@@ -30,13 +30,15 @@ model User {
 model Category {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @map("user_id") @db.Uuid
-  name      String
-  color     String?
+  name      String   @db.VarChar(50)
+  
+  color     String   @default("#E7F3F8") @db.VarChar(7)
+  
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt       @map("updated_at") @db.Timestamptz(6)
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  todos Todo[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // [cite: 65, 67]
+  todos     Todo[]
 
   @@unique([userId, name])
   @@index([userId])
@@ -44,20 +46,26 @@ model Category {
 }
 
 model Todo {
-  id          String    @id @default(uuid()) @db.Uuid
-  userId      String    @map("user_id") @db.Uuid
-  categoryId  String?   @map("category_id") @db.Uuid  // NULL 허용
-  title       String
-  content     String?
-  dueDate     DateTime? @map("due_date") @db.Timestamptz(6)
-  isCompleted Boolean   @default(false) @map("is_completed")
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime  @updatedAt       @map("updated_at") @db.Timestamptz(6)
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  categoryId   String?   @map("category_id") @db.Uuid
+  
+  text         String    // 일정/할 일 내용
+  
+  // 시간 관련 필드 추가
+  startDate    DateTime? @map("start_date") @db.Timestamptz(6) // 시작일시
+  endDate      DateTime? @map("end_date") @db.Timestamptz(6)   // 종료일시
+  isAllDay     Boolean   @default(false) @map("is_all_day")    // 하루 종일 여부
+  
+  isCompleted  Boolean   @default(false) @map("is_completed")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt       @map("updated_at") @db.Timestamptz(6)
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
-  @@index([userId, dueDate])
+  @@index([userId, startDate]) // 시작일 기준 조회가 많으므로 인덱스 변경
   @@index([userId, isCompleted])
   @@map("todos")
 }
+

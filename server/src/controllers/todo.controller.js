@@ -1,14 +1,21 @@
 const todoService = require("../services/todo.service");
 
+function toDateOrNull(v) {
+  if (v === undefined) return undefined; // "수정"에서 미전달
+  if (v === null) return null;
+  return new Date(v);
+}
+
 async function create(req, res) {
   const userId = req.user.id;
-  const { title, content, dueDate, categoryId } = req.validated.body;
+  const { text, startDate, endDate, isAllDay, categoryId } = req.validated.body;
 
   const todo = await todoService.create({
     userId,
-    title,
-    content,
-    dueDate: dueDate ? new Date(dueDate) : null,
+    text,
+    startDate: startDate ? new Date(startDate) : null,
+    endDate: endDate ? new Date(endDate) : null,
+    isAllDay: isAllDay ?? false,
     categoryId: categoryId ?? null,
   });
 
@@ -17,24 +24,34 @@ async function create(req, res) {
 
 async function list(req, res) {
   const userId = req.user.id;
-  const { date, filter } = (req.validated.query || {});
+  const { date, filter, from, to } = req.validated.query || {};
 
-  const todos = await todoService.list({ userId, date, filter });
+  const todos = await todoService.list({
+    userId,
+    date,
+    filter,
+    from: from ? new Date(from) : undefined,
+    to: to ? new Date(to) : undefined,
+  });
+
   res.json({ todos });
 }
 
 async function update(req, res) {
   const userId = req.user.id;
   const { id } = req.validated.params;
-  const { title, content, dueDate, categoryId, isCompleted } = req.validated.body;
+
+  const { text, startDate, endDate, isAllDay, categoryId, isCompleted } =
+    req.validated.body;
 
   const todo = await todoService.update({
     userId,
     id,
-    title,
-    content,
-    dueDate: dueDate === undefined ? undefined : (dueDate === null ? null : new Date(dueDate)),
-    categoryId: categoryId === undefined ? undefined : categoryId, // null 가능
+    text,
+    startDate: toDateOrNull(startDate),
+    endDate: toDateOrNull(endDate),
+    isAllDay,
+    categoryId: categoryId === undefined ? undefined : categoryId,
     isCompleted,
   });
 
