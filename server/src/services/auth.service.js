@@ -1,7 +1,11 @@
 const bcrypt = require("bcrypt");
 const { prisma } = require("../config/prisma");
 const { redis } = require("../config/redis");
-const { signAccessToken, signRefreshToken, verifyRefresh } = require("../utils/jwt");
+const {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefresh,
+} = require("../utils/jwt");
 
 function refreshKey(userId) {
   return `refresh:${userId}`;
@@ -10,7 +14,7 @@ function refreshKey(userId) {
 async function signup({ email, nickname, password }) {
   const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) {
-    const err = new Error("Email already exists");
+    const err = new Error("이미 사용 중인 이메일입니다.");
     err.statusCode = 409;
     throw err;
   }
@@ -28,20 +32,26 @@ async function signup({ email, nickname, password }) {
 async function login({ email, password }) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    const err = new Error("Invalid credentials");
+    const err = new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
     err.statusCode = 401;
     throw err;
   }
 
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) {
-    const err = new Error("Invalid credentials");
+    const err = new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
     err.statusCode = 401;
     throw err;
   }
 
-  const accessToken = signAccessToken({ userId: user.id, email: user.email });
-  const refreshToken = signRefreshToken({ userId: user.id, email: user.email });
+  const accessToken = signAccessToken({
+    userId: user.id,
+    email: user.email,
+  });
+  const refreshToken = signRefreshToken({
+    userId: user.id,
+    email: user.email,
+  });
 
   // Redis에 refresh 저장 (기존 토큰 덮어쓰기)
   const ttl = Number(process.env.REFRESH_TOKEN_TTL_SEC || 1209600);
@@ -59,7 +69,7 @@ async function refresh({ refreshToken }) {
   try {
     decoded = verifyRefresh(refreshToken);
   } catch {
-    const err = new Error("Invalid refresh token");
+    const err = new Error("로그인이 만료되었습니다. 다시 로그인해주세요.");
     err.statusCode = 401;
     throw err;
   }
@@ -68,14 +78,20 @@ async function refresh({ refreshToken }) {
 
   const saved = await redis.get(refreshKey(userId));
   if (!saved || saved !== refreshToken) {
-    const err = new Error("Refresh token expired or revoked");
+    const err = new Error("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
     err.statusCode = 401;
     throw err;
   }
 
   // 회전(rotate): 새 refresh 발급 + Redis 갱신
-  const newAccess = signAccessToken({ userId, email: decoded.email });
-  const newRefresh = signRefreshToken({ userId, email: decoded.email });
+  const newAccess = signAccessToken({
+    userId,
+    email: decoded.email,
+  });
+  const newRefresh = signRefreshToken({
+    userId,
+    email: decoded.email,
+  });
 
   const ttl = Number(process.env.REFRESH_TOKEN_TTL_SEC || 1209600);
   await redis.set(refreshKey(userId), newRefresh, { EX: ttl });
@@ -83,8 +99,15 @@ async function refresh({ refreshToken }) {
   return { accessToken: newAccess, refreshToken: newRefresh };
 }
 
-async function logout({ userId }) {
+async function logout({ userId, accessJti, accessExp }) {
   await redis.del(refreshKey(userId));
+
+  if (accessJti && accessExp) {
+    const ttl = Math.max(0, accessExp - Math.floor(Date.now() / 1000));
+    if (ttl > 0) {
+      await redis.set(`bl:access:${accessJti}`, "1", { EX: ttl });
+    }
+  }
 }
 
 module.exports = { signup, login, refresh, logout };

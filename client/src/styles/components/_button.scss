@@ -1,4 +1,4 @@
-@use "../base/variables" as *;
+@use '../base/variables' as *;
 
 .btn {
   width: 100%;
@@ -19,4 +19,57 @@
 .btn--ghost {
   background: transparent;
   color: $primary;
+}
+
+.linkBtn {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 6px 6px;
+  border-radius: 10px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &.danger {
+    color: #ef4444;
+  }
+}
+
+.primaryBtn {
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 900;
+  background: $primary;
+  color: #fff;
+
+  &:hover {
+    filter: brightness(0.98);
+  }
+}
+
+.outlineBtn {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1.5px solid $primary;
+  background: #fff;
+  color: $primary;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba($primary, 0.06);
+  }
 }

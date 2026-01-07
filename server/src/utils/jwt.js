@@ -1,7 +1,8 @@
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require("uuid");
 
 function signAccessToken(payload) {
-  return jwt.sign(payload, process.env.JWT_ACCESS_SECRET, {
+  return jwt.sign({ ...payload, jti: uuidv4() }, process.env.JWT_ACCESS_SECRET, {
     expiresIn: process.env.ACCESS_TOKEN_TTL || "15m",
   });
 }

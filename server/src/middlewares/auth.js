@@ -1,6 +1,7 @@
+const { redis } = require("../config/redis");
 const { verifyAccess } = require("../utils/jwt");
 
-function authRequired(req, res, next) {
+async function authRequired(req, res, next) {
   const header = req.headers.authorization || "";
   const [type, token] = header.split(" ");
 
@@ -10,7 +11,16 @@ function authRequired(req, res, next) {
 
   try {
     const decoded = verifyAccess(token);
-    req.user = { id: decoded.userId, email: decoded.email };
+    const jti = decoded.jti;
+
+    if (jti) {
+      const blocked = await redis.get(`bl:access:${jti}`);
+      if (blocked) {
+        return res.status(401).json({ message: "Token revoked" });
+      }
+    }
+
+    req.user = { id: decoded.userId, email: decoded.email, jti, exp: decoded.exp };
     next();
   } catch {
     return res.status(401).json({ message: "Invalid token" });

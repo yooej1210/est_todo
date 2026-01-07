@@ -122,15 +122,15 @@ const { authRequired } = require("../middlewares/auth");
 const categoryController = require("../controllers/category.controller");
 
 const ALLOWED_COLORS = [
-  "#F1F1EF",
-  "#F4EEEE",
-  "#FBECDD",
-  "#FBF3DB",
-  "#EDF3EC",
-  "#E7F3F8",
-  "#F6F3F9",
-  "#FAF1F5",
-  "#FDEBEC",
+  "#E3E3E1", // Default (Gray)
+  "#EADDD8", // Brown
+  "#F6D7B8", // Orange
+  "#F3E5A6", // Yellow
+  "#DCE8DA", // Green
+  "#D6EAF3", // Blue (기본)
+  "#E8E0F0", // Purple
+  "#F2DCE6", // Pink
+  "#F4D0CC", // Red
 ];
 
 
@@ -140,7 +140,7 @@ const createSchema = z.object({
     color: z
       .string()
       .refine((v) => ALLOWED_COLORS.includes(v), { message: "허용되지 않은 카테고리 색상입니다." })
-      .default("#E7F3F8"),
+      .default("#D6EAF3"),
   }),
 });
 

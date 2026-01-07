@@ -128,9 +128,9 @@ const { authRequired } = require("../middlewares/auth");
 
 const signupSchema = z.object({
   body: z.object({
-    email: z.string().email(),
-    nickname: z.string().min(1).max(30),
-    password: z.string().min(8).max(72),
+    email: z.string().email("이메일 형식이 올바르지 않습니다"),
+    nickname: z.string().min(1, "닉네임을 입력하세요").max(30),
+    password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다").max(72)
   }),
   query: z.object({}).optional(),
   params: z.object({}).optional(),
@@ -138,8 +138,8 @@ const signupSchema = z.object({
 
 const loginSchema = z.object({
   body: z.object({
-    email: z.string().email(),
-    password: z.string().min(8).max(72),
+    email: z.string().email("이메일 형식이 올바르지 않습니다"),
+    password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다").max(72)
   }),
   query: z.object({}).optional(),
   params: z.object({}).optional(),

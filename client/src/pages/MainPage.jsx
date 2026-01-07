@@ -1,37 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import Button from "../components/Button";
 import Input from "../components/Input";
 import { logoutApi } from "../api/auth.api";
 import TodoForm from "../components/todo/TodoForm";
 import TodoList from "../components/todo/TodoList";
-
-import {
-  listTodos,
-  createTodo,
-  updateTodo,
-  toggleTodo,
-  deleteTodo,
-} from "../api/todo.api";
-import {
-  listCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-} from "../api/category.api";
-
+import CategoryPanel from "../components/category/CategoryPanel";
 import { useNavigate } from "react-router-dom";
 
-// ✅ 노션톤 카테고리 색상 팔레트(한 파일 안에서만 사용) — mood 제거
+import { listTodos, createTodo, updateTodo, toggleTodo, deleteTodo } from "../api/todo.api";
+import { listCategories, createCategory, updateCategory, deleteCategory } from "../api/category.api";
+
+// ✅ 노션톤 카테고리 색상 팔레트(살짝 진한 버전)
 const CATEGORY_COLORS = [
-  { name: "Default (Gray)", hex: "#F1F1EF" },
-  { name: "Brown", hex: "#F4EEEE" },
-  { name: "Orange", hex: "#FBECDD" },
-  { name: "Yellow", hex: "#FBF3DB" },
-  { name: "Green", hex: "#EDF3EC" },
-  { name: "Blue (기본)", hex: "#E7F3F8" },
-  { name: "Purple", hex: "#F6F3F9" },
-  { name: "Pink", hex: "#FAF1F5" },
-  { name: "Red", hex: "#FDEBEC" },
+  { name: "Gray", hex: "#E3E3E1" },
+  { name: "Brown", hex: "#EADDD8" },
+  { name: "Orange", hex: "#F6D7B8" },
+  { name: "Yellow", hex: "#F3E5A6" },
+  { name: "Green", hex: "#DCE8DA" },
+  { name: "Blue", hex: "#D6EAF3" },
+  { name: "Purple", hex: "#E8E0F0" },
+  { name: "Pink", hex: "#F2DCE6" },
+  { name: "Red", hex: "#F4D0CC" },
 ];
 
 function toLocalDateInputValue(d = new Date()) {
@@ -41,25 +29,18 @@ function toLocalDateInputValue(d = new Date()) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function fmt(dt) {
-  if (!dt) return "-";
-  const d = new Date(dt);
-  return d.toLocaleString();
-}
-
 export default function MainPage() {
   const nav = useNavigate();
 
-  // filters
+  // ✅ 조회(필터) 상태
   const [filter, setFilter] = useState("today"); // today | week | date | all
   const [date, setDate] = useState(toLocalDateInputValue());
 
-  // data
+  // ✅ 데이터
   const [todos, setTodos] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [err, setErr] = useState("");
 
-  // create form
+  // ✅ 등록 폼 상태
   const [form, setForm] = useState({
     text: "",
     categoryId: "",
@@ -68,8 +49,11 @@ export default function MainPage() {
     endDate: "",
   });
 
-  // ✅ category form (기본값 Blue)
-  const [catForm, setCatForm] = useState({ name: "", color: "#E7F3F8" });
+  // ✅ 카테고리 폼 상태
+  const [catForm, setCatForm] = useState({ name: "", color: "#D6EAF3" });
+
+  // ✅ 에러(원하면 ErrorModal로 바꿔도 됨)
+  const [err, setErr] = useState("");
 
   const selectedParams = useMemo(() => {
     if (filter === "today") return { filter: "today" };
@@ -98,6 +82,7 @@ export default function MainPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, date]);
 
+  // ===== Todo =====
   const onCreateTodo = async (e) => {
     e.preventDefault();
     setErr("");
@@ -164,25 +149,23 @@ export default function MainPage() {
     }
   };
 
+  // ===== Category =====
   const onCreateCategory = async (e) => {
     e.preventDefault();
     setErr("");
+
     if (!catForm.name.trim()) {
       setErr("카테고리 이름을 입력해주세요.");
       return;
     }
 
-    // ✅ 허용 팔레트 중 하나인지 한번 더 방어(프론트 조작 대비)
     const allowed = CATEGORY_COLORS.some((c) => c.hex === catForm.color);
-    const safeColor = allowed ? catForm.color : "#E7F3F8";
+    const safeColor = allowed ? catForm.color : "#D6EAF3";
 
     try {
-      const created = await createCategory({
-        name: catForm.name.trim(),
-        color: safeColor,
-      });
+      const created = await createCategory({ name: catForm.name.trim(), color: safeColor });
       setCategories((prev) => [created, ...prev]);
-      setCatForm({ name: "", color: "#E7F3F8" });
+      setCatForm({ name: "", color: "#D6EAF3" });
     } catch (e2) {
       const msg =
         e2?.response?.data?.errors?.[0]?.message ||
@@ -208,12 +191,11 @@ export default function MainPage() {
   };
 
   const onDeleteCategory = async (id) => {
-    if (!confirm("카테고리를 삭제할까요? (연결된 Todo는 정책에 따라 처리됨)")) return;
+    if (!confirm("카테고리를 삭제할까요?")) return;
     setErr("");
     try {
       await deleteCategory(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
-      // UI 상에서 선택된 categoryId가 삭제됐으면 해제
       setForm((p) => (p.categoryId === id ? { ...p, categoryId: "" } : p));
       loadAll();
     } catch (e) {
@@ -224,7 +206,7 @@ export default function MainPage() {
   const logout = async () => {
     try {
       await logoutApi();
-    } catch { }
+    } catch {}
     localStorage.removeItem("accessToken");
     nav("/login", { replace: true });
   };
@@ -232,170 +214,70 @@ export default function MainPage() {
   return (
     <div className="main-wrap">
       <div className="main-shell">
-        {/* LEFT: Category */}
-        <aside className="panel side">
-          <div className="header">
-            <div>
-              <h2 className="title">카테고리</h2>
-              <div className="sub">사용자별 카테고리 관리</div>
-            </div>
-            <div style={{ width: 110 }}>
-              <Button variant="ghost" onClick={logout}>
-                로그아웃
-              </Button>
-            </div>
-          </div>
+        <CategoryPanel
+          categories={categories}
+          catForm={catForm}
+          setCatForm={setCatForm}
+          onCreateCategory={onCreateCategory}
+          onRenameCategory={onRenameCategory}
+          onDeleteCategory={onDeleteCategory}
+          onLogout={logout}
+          palette={CATEGORY_COLORS}
+        />
 
-          <form className="form-card" onSubmit={onCreateCategory}>
-            <Input
-              label="새 카테고리"
-              placeholder="예: 공부"
-              value={catForm.name}
-              onChange={(e) => setCatForm((p) => ({ ...p, name: e.target.value }))}
-            />
-
-            {/* ✅ 색상 팔레트 선택 UI (느낌 텍스트 제거, HEX만 표기) */}
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 700 }}>색상 선택</label>
-              <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
-                {CATEGORY_COLORS.map((c) => (
-                  <label
-                    key={c.hex}
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      cursor: "pointer",
-                      alignItems: "flex-start",
-                      padding: "8px 10px",
-                      border:
-                        catForm.color === c.hex
-                          ? "1px solid rgba(91,124,255,0.7)"
-                          : "1px solid #e5e7eb",
-                      borderRadius: 12,
-                      background: "#fff",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="categoryColor"
-                      checked={catForm.color === c.hex}
-                      onChange={() => setCatForm((p) => ({ ...p, color: c.hex }))}
-                      style={{ marginTop: 4 }}
-                    />
-                    <div
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: 6,
-                        background: c.hex,
-                        border: "1px solid #ddd",
-                        marginTop: 2,
-                      }}
-                    />
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 800 }}>{c.name}</div>
-                      <div style={{ fontSize: 12, color: "#6b7280" }}>{c.hex}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-              <div className="helper">노션 스타일 팔레트에서만 선택할 수 있어요.</div>
-            </div>
-
-            <div style={{ alignSelf: "end" }}>
-              <Button>추가</Button>
-            </div>
-          </form>
-
-          <div className="cat-list">
-            {categories.map((c) => (
-              <div className="cat" key={c.id}>
-                <div className="left">
-                  <div className="dot" style={{ background: c.color || "#e5e7eb" }} />
-                  <div className="name">{c.name}</div>
-                </div>
-                <div className="mini">
-                  <Button variant="ghost" onClick={() => onRenameCategory(c)}>
-                    수정
-                  </Button>
-                  <Button variant="ghost" onClick={() => onDeleteCategory(c.id)}>
-                    삭제
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        {/* RIGHT: Todos */}
         <main className="panel">
           <div className="header">
             <div>
               <h1 className="title">Todo & 일정</h1>
-              <div className="sub">필터(오늘/이번주/날짜) + 일정(start/end/all-day)</div>
+              <div className="sub">조회(필터)와 등록(폼)을 분리해서 보기 좋게</div>
             </div>
           </div>
 
-          <section className="controls">
-            <div className="row">
-              <button
-                className={`chip ${filter === "today" ? "active" : ""}`}
-                onClick={() => setFilter("today")}
-                type="button"
-              >
-                오늘
-              </button>
-              <button
-                className={`chip ${filter === "week" ? "active" : ""}`}
-                onClick={() => setFilter("week")}
-                type="button"
-              >
-                이번 주
-              </button>
-              <button
-                className={`chip ${filter === "date" ? "active" : ""}`}
-                onClick={() => setFilter("date")}
-                type="button"
-              >
-                날짜
-              </button>
-              <button
-                className={`chip ${filter === "all" ? "active" : ""}`}
-                onClick={() => setFilter("all")}
-                type="button"
-              >
-                전체
-              </button>
-            </div>
+          {/* ✅ 1) 조회 섹션 (FilterPanel) */}
+          <section className="sectionCard">
+            <div className="sectionTitle">조회</div>
 
-            {filter === "date" && (
+            <div className="controls" style={{ marginBottom: 0 }}>
               <div className="row">
-                <Input
-                  label="조회 날짜"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  helper="해당 날짜 범위와 겹치는 일정이 조회됩니다."
-                />
+                <button className={`chip ${filter === "today" ? "active" : ""}`} onClick={() => setFilter("today")} type="button">
+                  오늘
+                </button>
+                <button className={`chip ${filter === "week" ? "active" : ""}`} onClick={() => setFilter("week")} type="button">
+                  이번 주
+                </button>
+                <button className={`chip ${filter === "date" ? "active" : ""}`} onClick={() => setFilter("date")} type="button">
+                  날짜
+                </button>
+                <button className={`chip ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")} type="button">
+                  전체
+                </button>
               </div>
-            )}
+
+              {filter === "date" && (
+                <div className="row" style={{ marginTop: 10 }}>
+                  <Input
+                    label="조회 날짜"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    helper="해당 날짜 범위와 겹치는 일정이 조회됩니다."
+                  />
+                </div>
+              )}
+            </div>
           </section>
 
-          <TodoForm
-            form={form}
-            setForm={setForm}
-            categories={categories}
-            onCreateTodo={onCreateTodo}
-            err={err}
-          />
+          {/* ✅ 2) 등록 섹션 (TodoForm) */}
+          <section className="sectionCard" style={{ marginTop: 14 }}>
+            <div className="sectionTitle">등록</div>
+            <TodoForm form={form} setForm={setForm} categories={categories} onCreateTodo={onCreateTodo} err={err} />
+          </section>
 
-          <TodoList
-            todos={todos}
-            onToggle={onToggle}
-            onEditText={onEditText}
-            onDelete={onDelete}
-          />
-
+          {/* ✅ 3) 목록 섹션 (TodoList) */}
+          <section className="sectionCard" style={{ marginTop: 14 }}>
+            <div className="sectionTitle">목록</div>
+            <TodoList todos={todos} onToggle={onToggle} onEditText={onEditText} onDelete={onDelete} />
+          </section>
         </main>
       </div>
     </div>

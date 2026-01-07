@@ -1,0 +1,68 @@
+@use "../base/variables" as *;
+
+/* ===== Modal (공용) ===== */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 9999;
+}
+
+.modalCard {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.modalTitle {
+  font-weight: 900;
+  font-size: 15px;
+}
+
+.modalClose {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px 8px;
+  border-radius: 10px;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.modalBody {
+  padding: 16px;
+}
+
+.modalFooter {
+  padding: 12px 16px;
+  border-top: 1px solid #eef2f7;
+  background: #fafafa;
+}
+
+/* ✅ ErrorModal이 항상 위로 오도록 (레이어 문제 해결용) */
+.modalOverlay--error {
+  z-index: 20000;
+}
+.modalCard--error {
+  position: relative;
+  z-index: 20001;
+}

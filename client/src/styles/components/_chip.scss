@@ -1,0 +1,17 @@
+@use '../base/variables' as *;
+
+.controls {
+  .chip {
+    border: 1px solid $border;
+    background: #fff;
+    padding: 8px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+
+    &.active {
+      border-color: rgba($primary, 0.8);
+      box-shadow: 0 0 0 4px rgba($primary, 0.12);
+    }
+  }
+}

@@ -97,7 +97,7 @@ const updateSchema = z.object({
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["startDate"],
-          message: "isAllDay=true로 변경할 때 startDate도 함께 보내주세요.",
+          message: "하루 종일 선택 시 시작 일시도 함께 보내주세요.",
         });
       }
 
@@ -108,7 +108,7 @@ const updateSchema = z.object({
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["endDate"],
-            message: "endDate는 startDate보다 빠를 수 없습니다.",
+            message: "종료 일시는 시작 일시보다 빠를 수 없어요",
           });
         }
       }

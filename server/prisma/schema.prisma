@@ -32,7 +32,7 @@ model Category {
   userId    String   @map("user_id") @db.Uuid
   name      String   @db.VarChar(50)
   
-  color     String   @default("#E7F3F8") @db.VarChar(7)
+  color     String   @default("#D6EAF3") @db.VarChar(7)
   
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt       @map("updated_at") @db.Timestamptz(6)

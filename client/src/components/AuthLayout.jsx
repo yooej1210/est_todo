@@ -10,8 +10,8 @@ export default function AuthLayout({ children }) {
 
         <div className="auth-right">
           <div className="brand">
-            <div className="logo">Q</div>
-            <div className="name">IMQA</div>
+            <div className="logo">🅿️</div>
+            <div className="name">Plan</div>
           </div>
           {children}
         </div>
