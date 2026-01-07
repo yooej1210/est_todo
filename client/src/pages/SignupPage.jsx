@@ -17,7 +17,6 @@ export default function SignupPage() {
         e.preventDefault();
         setErr("");
 
-        // ✅ 프론트에서 먼저 검증 (백엔드와 동일: 8자 이상)
         if (form.password.length < 8) {
             setErr("비밀번호는 8자 이상이어야 합니다.");
             return;
@@ -28,7 +27,6 @@ export default function SignupPage() {
             await signupApi(form);
             nav("/login", { replace: true });
         } catch (e2) {
-            // 서버가 errors 배열로 주는 경우도 같이 처리
             const msg =
                 e2?.response?.data?.errors?.[0]?.message ||
                 e2?.response?.data?.message ||

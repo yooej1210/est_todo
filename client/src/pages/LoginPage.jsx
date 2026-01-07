@@ -20,7 +20,6 @@ export default function LoginPage() {
     try {
       const data = await loginApi(form);
 
-      // ✅ 백엔드가 accessToken을 어떤 키로 주는지에 맞춰 조정
       const accessToken = data.accessToken || data.token || data?.data?.accessToken;
       if (!accessToken) throw new Error("토큰이 응답에 없습니다.");
 

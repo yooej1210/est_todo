@@ -121,22 +121,45 @@ const { validate } = require("../utils/validate");
 const { authRequired } = require("../middlewares/auth");
 const categoryController = require("../controllers/category.controller");
 
+const ALLOWED_COLORS = [
+  "#F1F1EF",
+  "#F4EEEE",
+  "#FBECDD",
+  "#FBF3DB",
+  "#EDF3EC",
+  "#E7F3F8",
+  "#F6F3F9",
+  "#FAF1F5",
+  "#FDEBEC",
+];
+
+
 const createSchema = z.object({
   body: z.object({
-    name: z.string().min(1).max(30),
-    color: z.string().max(30).optional(),
+    name: z.string().min(1).max(20),
+    color: z
+      .string()
+      .refine((v) => ALLOWED_COLORS.includes(v), { message: "허용되지 않은 카테고리 색상입니다." })
+      .default("#E7F3F8"),
   }),
 });
 
 const updateSchema = z.object({
   body: z.object({
     name: z.string().min(1).max(30).optional(),
-    color: z.string().max(30).optional(),
+
+    color: z
+      .string()
+      .refine((v) => ALLOWED_COLORS.includes(v), {
+        message: "허용되지 않은 카테고리 색상입니다.",
+      })
+      .optional(),
   }),
   params: z.object({
     id: z.string().uuid(),
   }),
 });
+
 
 const idParamSchema = z.object({
   params: z.object({

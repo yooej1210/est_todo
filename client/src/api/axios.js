@@ -2,5 +2,11 @@ import axios from "axios";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:4000",
-  withCredentials: true, // refresh를 쿠키로 할 경우 대비
+  withCredentials: true,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });

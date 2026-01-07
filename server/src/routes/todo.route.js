@@ -1,8 +1,3 @@
-const router = require("express").Router();
-const { z } = require("zod");
-const { validate } = require("../utils/validate");
-const { authRequired } = require("../middlewares/auth");
-const todoController = require("../controllers/todo.controller");
 
 /**
  * @swagger
@@ -45,6 +40,14 @@ const todoController = require("../controllers/todo.controller");
  */
 
 
+
+const router = require("express").Router();
+const { z } = require("zod");
+const { validate } = require("../utils/validate");
+const { authRequired } = require("../middlewares/auth");
+const todoController = require("../controllers/todo.controller");
+
+
 // -------- Zod Schemas --------
 const createSchema = z.object({
   body: z
@@ -56,7 +59,6 @@ const createSchema = z.object({
       categoryId: z.string().uuid().optional().nullable(),
     })
     .superRefine((val, ctx) => {
-      // ✅ allDay 정책: true면 startDate 필수
       if (val.isAllDay === true && !val.startDate) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -65,7 +67,6 @@ const createSchema = z.object({
         });
       }
 
-      // ✅ allDay가 아니고 start/end 둘 다 있으면 end >= start
       if (val.isAllDay !== true && val.startDate && val.endDate) {
         const s = new Date(val.startDate).getTime();
         const e = new Date(val.endDate).getTime();
@@ -92,9 +93,6 @@ const updateSchema = z.object({
       isCompleted: z.boolean().optional(),
     })
     .superRefine((val, ctx) => {
-      // ✅ 수정에서 isAllDay를 true로 바꾸는 경우 startDate가 같이 오거나,
-      // 이미 저장된 startDate가 있어야 하는데, 여기선 "요청값만" 검증 가능하니
-      // 최소한 "요청에서 true를 보내면 startDate도 같이 보내라"로 강제하는게 안전
       if (val.isAllDay === true && val.startDate === undefined) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -103,7 +101,6 @@ const updateSchema = z.object({
         });
       }
 
-      // ✅ allDay가 아니고 start/end 둘 다 있으면 end >= start
       if (val.isAllDay !== true && val.startDate && val.endDate) {
         const s = new Date(val.startDate).getTime();
         const e = new Date(val.endDate).getTime();
@@ -124,7 +121,7 @@ const idParamSchema = z.object({
 
 const listSchema = z.object({
   query: z.object({
-    date: z.string().optional(), // YYYY-MM-DD
+    date: z.string().optional(),
     filter: z.enum(["today", "week"]).optional(),
     from: z.string().datetime().optional(),
     to: z.string().datetime().optional(),

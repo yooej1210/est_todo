@@ -1,0 +1,313 @@
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+
+.main-wrap {
+  min-height: 100vh;
+  padding: 24px;
+  background: $bg;
+}
+
+.main-shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+
+  @include respond(md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: $card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow;
+  padding: 18px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  .title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: $muted;
+  }
+}
+
+.controls {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+
+  .row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    border: 1px solid $border;
+    background: #fff;
+    padding: 8px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+
+    &.active {
+      border-color: rgba($primary, 0.8);
+      box-shadow: 0 0 0 4px rgba($primary, 0.12);
+    }
+  }
+}
+
+.form-card {
+  border: 1px solid $border;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+  display: grid;
+  gap: 10px;
+
+  .two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+
+    @include respond(sm) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .inline {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    .check {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+      color: $muted;
+      user-select: none;
+    }
+  }
+}
+
+/* ✅ 목록 영역 */
+.list {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+/* ✅ 개선된 Todo 카드 UI (기존 .todo-item 대체/업그레이드) */
+.todo-item {
+  border: 1px solid $border;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  transition: transform 0.08s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  .left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    margin-top: 0;
+    background: $border;
+    flex: 0 0 auto;
+  }
+
+  .main {
+    font-weight: 900;
+    font-size: 15px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .badge {
+    margin-left: 6px;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid $border;
+    background: #f9fafb;
+    flex: 0 0 auto;
+
+    &.open {
+      color: #2563eb;
+      border-color: rgba(37, 99, 235, 0.35);
+      background: rgba(37, 99, 235, 0.06);
+    }
+
+    &.done {
+      color: #16a34a;
+      border-color: rgba(22, 163, 74, 0.35);
+      background: rgba(22, 163, 74, 0.06);
+    }
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    min-width: 0;
+  }
+
+  .pill {
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid $border;
+    background: #fff;
+    flex: 0 0 auto;
+  }
+
+  .meta {
+    font-size: 12px;
+    color: $muted;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    /* 기존 Button 컴포넌트 쓰면 아래는 영향 없고,
+       텍스트 버튼으로 바꾸면 이 스타일이 적용됨 */
+    .linkBtn {
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 800;
+      color: #2563eb;
+      cursor: pointer;
+      padding: 6px 6px;
+
+      &:hover {
+        text-decoration: underline;
+      }
+
+      &.danger {
+        color: #ef4444;
+      }
+    }
+
+    /* 기존 Button 스타일 유지용 */
+    button {
+      width: auto;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+  }
+
+  &.done {
+    opacity: 0.78;
+
+    .main {
+      text-decoration: line-through;
+    }
+  }
+}
+
+/* ✅ 빈 목록 표시 */
+.emptyBox {
+  margin-top: 14px;
+  border: 1px dashed #d1d5db;
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  color: $muted;
+  font-size: 13px;
+}
+
+.side {
+  display: grid;
+  gap: 12px;
+
+  .cat-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .cat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid $border;
+    border-radius: 12px;
+    background: #fff;
+
+    .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: $border;
+      }
+
+      .name {
+        font-weight: 800;
+        font-size: 13px;
+      }
+    }
+
+    .mini {
+      display: flex;
+      gap: 6px;
+
+      button {
+        width: auto;
+        padding: 6px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+      }
+    }
+  }
+}
