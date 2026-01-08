@@ -69,8 +69,15 @@ async function create({ userId, text, startDate, endDate, isAllDay, categoryId }
       err.statusCode = 400;
       throw err;
     }
-    s = startOfDayLocal(s);
-    e = endOfDayLocal(s); // startDate Í∏∞Ï? ?πÏùº Ï¢ÖÎ£å
+    const normalizedStart = startOfDayLocal(s);
+    const normalizedEnd = e ? endOfDayLocal(e) : endOfDayLocal(normalizedStart);
+    if (normalizedEnd.getTime() < normalizedStart.getTime()) {
+      const err = new Error("endDate cannot be earlier than startDate");
+      err.statusCode = 400;
+      throw err;
+    }
+    s = normalizedStart;
+    e = normalizedEnd;
   } else {
     // ?ºÎ∞ò ?ºÏ†ï?¥Î©¥ end < start Î∞©Ïñ¥(?????àÏùÑ ??
     if (s && e && e.getTime() < s.getTime()) {
@@ -162,8 +169,15 @@ async function update({
       err.statusCode = 400;
       throw err;
     }
-    normalizedStart = startOfDayLocal(normalizedStart);
-    normalizedEnd = endOfDayLocal(normalizedStart);
+    const normalizedStartDay = startOfDayLocal(normalizedStart);
+    const normalizedEndDay = normalizedEnd ? endOfDayLocal(normalizedEnd) : endOfDayLocal(normalizedStartDay);
+    if (normalizedEndDay.getTime() < normalizedStartDay.getTime()) {
+      const err = new Error("endDate cannot be earlier than startDate");
+      err.statusCode = 400;
+      throw err;
+    }
+    normalizedStart = normalizedStartDay;
+    normalizedEnd = normalizedEndDay;
   } else {
     if (normalizedStart && normalizedEnd && normalizedEnd.getTime() < normalizedStart.getTime()) {
       const err = new Error("endDate cannot be earlier than startDate");
@@ -220,4 +234,5 @@ async function remove({ userId, id }) {
 }
 
 module.exports = { create, list, update, toggle, remove };
+
 
