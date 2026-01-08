@@ -18,14 +18,14 @@ npm install
 
 2) `.env` 설정
 ```bash
-# server/.env 예시
+# server/.env 예시 (운영 기준 포맷)
 PORT=4000
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DBNAME
-JWT_ACCESS_SECRET=your_access_secret
-JWT_REFRESH_SECRET=your_refresh_secret
+DATABASE_URL=postgresql://todo_user:STRONG_PASSWORD@db.example.com:5432/todo_prod
+JWT_ACCESS_SECRET=CHANGE_ME_ACCESS_32PLUS_CHARS
+JWT_REFRESH_SECRET=CHANGE_ME_REFRESH_32PLUS_CHARS
 ACCESS_TOKEN_TTL=15m
 REFRESH_TOKEN_TTL_SEC=1209600
-REDIS_URL=redis://HOST:PORT
+REDIS_URL=redis://localhost:6379
 ```
 
 3) DB 마이그레이션 및 실행
@@ -46,8 +46,8 @@ npm install
 
 2) `.env` 설정 (필요 시)
 ```bash
-# client/.env 예시
-VITE_API_BASE_URL=http://localhost:4000
+# client/.env 예시 (운영 기준 포맷)
+VITE_API_BASE_URL=https://api.example.com
 ```
 
 3) 개발 서버 실행
@@ -56,6 +56,9 @@ npm run dev
 ```
 
 ## ERD 및 테이블 설계 설명
+
+### ERD 이미지
+![ERD](docs/erd.png)
 
 ### ERD (텍스트 표현)
 ```
@@ -112,6 +115,24 @@ Category 1 --- N Todo (nullable)
   - 장점: 카테고리 없이도 Todo 생성 가능
   - 단점: 분류 없는 데이터가 늘어날 수 있음
 
-## 데일리 작업 기록 (코드/마이그레이션 기준 정리)
+## 데일리 작업 기록 (실제 진행 기록)
 
+### Day 1
+- 진행한 작업: 프로젝트 기본 구조 세팅(server/client), Prisma 스키마(User/Category/Todo) 정의 및 초기 마이그레이션 생성
+- 진행한 작업: 기본 테이블 관계 설정(User-Category, User-Todo, Category-Todo) 및 제약 검토
+- 고민한 점: 카테고리 삭제 시 Todo를 함께 삭제할지, 분리해 유지할지 결정(Set Null 선택)
+- 남은 과제: Todo 스키마 개선(텍스트/일정), 인증 플로우 설계
 
+### Day 2
+- 진행한 작업: Todo `title/content` 구조를 `text` 단일 필드로 통합 마이그레이션
+- 진행한 작업: 일정 필드(`start_date`, `end_date`, `is_all_day`) 추가 및 인덱스 재설계
+- 진행한 작업: 카테고리 컬러 정책 확정(기본값/허용 색상), 컬럼 타입/제약 보강
+- 고민한 점: 종일 일정의 날짜 정규화 기준(00:00~23:59:59.999)과 조회 조건 충돌 방지
+- 남은 과제: JWT/Redis 기반 인증/세션 관리, API 문서 정리
+
+### Day 3
+- 진행한 작업: JWT 인증(Access/Refresh) 구현 및 Redis에 Refresh 저장/회전 로직 추가
+- 진행한 작업: 로그아웃 시 Access 토큰 블랙리스트 처리, 인증 미들웨어에 폐기 토큰 체크 추가
+- 진행한 작업: Todo/Category CRUD 및 필터(오늘/주간/기간 겹침) API 구현
+- 고민한 점: 매 요청 Redis 조회 비용과 보안(즉시 로그아웃 반영) 간의 트레이드오프
+- 남은 과제: 테스트 추가, 예외 메시지 정리, 배포 환경 설정

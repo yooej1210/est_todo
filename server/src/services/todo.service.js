@@ -10,7 +10,7 @@ async function ensureCategoryOwned(userId, categoryId) {
   if (!categoryId) return;
   const c = await prisma.category.findFirst({ where: { id: categoryId, userId } });
   if (!c) {
-    const err = new Error("Category not found");
+    const err = new Error("카테고리를 찾을 수 없습니다.");
     err.statusCode = 404;
     throw err;
   }
@@ -28,24 +28,18 @@ function endOfDayLocal(d) {
   return x;
 }
 
-
 function buildOverlapWhere(userId, rangeStart, rangeEnd) {
-  // "기간�?겹치???�정" 조건:
-  // startDate <= rangeEnd AND (endDate >= rangeStart OR endDate IS NULL)
-  // + startDate IS NOT NULL
   return {
     userId,
     AND: [
       { startDate: { not: null } },
       { startDate: { lte: rangeEnd } },
-      {
-        OR: [{ endDate: { gte: rangeStart } }, { endDate: null }],
-      },
+      { OR: [{ endDate: { gte: rangeStart } }, { endDate: null }] },
     ],
   };
 }
+
 function buildStartWithinWhere(userId, rangeStart, rangeEnd) {
-  // Filter by startDate only, excluding items that start before the range.
   return {
     userId,
     AND: [
@@ -55,6 +49,7 @@ function buildStartWithinWhere(userId, rangeStart, rangeEnd) {
     ],
   };
 }
+
 async function create({ userId, text, startDate, endDate, isAllDay, categoryId }) {
   await ensureCategoryOwned(userId, categoryId);
 
@@ -62,26 +57,24 @@ async function create({ userId, text, startDate, endDate, isAllDay, categoryId }
   let e = endDate ?? null;
   const allDay = !!isAllDay;
 
-  // ???�책 강제
   if (allDay) {
     if (!s) {
-      const err = new Error("isAllDay=true requires startDate");
+      const err = new Error("하루 종일 일정은 시작 날짜가 필요합니다.");
       err.statusCode = 400;
       throw err;
     }
     const normalizedStart = startOfDayLocal(s);
     const normalizedEnd = e ? endOfDayLocal(e) : endOfDayLocal(normalizedStart);
     if (normalizedEnd.getTime() < normalizedStart.getTime()) {
-      const err = new Error("endDate cannot be earlier than startDate");
+      const err = new Error("종료 날짜는 시작 날짜보다 빠를 수 없습니다.");
       err.statusCode = 400;
       throw err;
     }
     s = normalizedStart;
     e = normalizedEnd;
   } else {
-    // ?�반 ?�정?�면 end < start 방어(?????�을 ??
     if (s && e && e.getTime() < s.getTime()) {
-      const err = new Error("endDate cannot be earlier than startDate");
+      const err = new Error("종료 날짜는 시작 날짜보다 빠를 수 없습니다.");
       err.statusCode = 400;
       throw err;
     }
@@ -100,11 +93,9 @@ async function create({ userId, text, startDate, endDate, isAllDay, categoryId }
   });
 }
 
-
 async function list({ userId, date, filter, from, to }) {
   let where = { userId };
 
-  // ?�선?�위: from/to > date > filter > ?�체
   if (from && to) {
     where = buildOverlapWhere(userId, from, to);
   } else if (date) {
@@ -115,7 +106,11 @@ async function list({ userId, date, filter, from, to }) {
     where = buildStartWithinWhere(userId, startOfDay(now), endOfDay(now));
   } else if (filter === "week") {
     const now = new Date();
-    where = buildStartWithinWhere(userId, startOfWeekMonday(now), endOfWeekMonday(now));
+    where = buildStartWithinWhere(
+      userId,
+      startOfWeekMonday(now),
+      endOfWeekMonday(now)
+    );
   }
 
   return prisma.todo.findMany({
@@ -137,7 +132,7 @@ async function update({
 }) {
   const exists = await prisma.todo.findFirst({ where: { id, userId } });
   if (!exists) {
-    const err = new Error("Todo not found");
+    const err = new Error("할 일을 찾을 수 없습니다.");
     err.statusCode = 404;
     throw err;
   }
@@ -146,29 +141,27 @@ async function update({
     await ensureCategoryOwned(userId, categoryId);
   }
 
-  // ???�재�?+ 변경값???�쳐???�책 강제
   const nextIsAllDay = isAllDay !== undefined ? isAllDay : exists.isAllDay;
 
-  // startDate/endDate??"?�청????�????�으�?그걸 ?�고, ?�으�?기존 ?��?
-  const nextStart =
-    startDate !== undefined ? startDate : exists.startDate; // startDate??Date|null
-  const nextEnd =
-    endDate !== undefined ? endDate : exists.endDate;
+  const nextStart = startDate !== undefined ? startDate : exists.startDate; // Date|null
+  const nextEnd = endDate !== undefined ? endDate : exists.endDate;
 
-  // ?�책 강제
   let normalizedStart = nextStart;
   let normalizedEnd = nextEnd;
 
   if (nextIsAllDay) {
     if (!normalizedStart) {
-      const err = new Error("isAllDay=true requires startDate");
+      const err = new Error("하루 종일 일정은 시작 날짜가 필요합니다.");
       err.statusCode = 400;
       throw err;
     }
     const normalizedStartDay = startOfDayLocal(normalizedStart);
-    const normalizedEndDay = normalizedEnd ? endOfDayLocal(normalizedEnd) : endOfDayLocal(normalizedStartDay);
+    const normalizedEndDay = normalizedEnd
+      ? endOfDayLocal(normalizedEnd)
+      : endOfDayLocal(normalizedStartDay);
+
     if (normalizedEndDay.getTime() < normalizedStartDay.getTime()) {
-      const err = new Error("endDate cannot be earlier than startDate");
+      const err = new Error("종료 날짜는 시작 날짜보다 빠를 수 없습니다.");
       err.statusCode = 400;
       throw err;
     }
@@ -176,7 +169,7 @@ async function update({
     normalizedEnd = normalizedEndDay;
   } else {
     if (normalizedStart && normalizedEnd && normalizedEnd.getTime() < normalizedStart.getTime()) {
-      const err = new Error("endDate cannot be earlier than startDate");
+      const err = new Error("종료 날짜는 시작 날짜보다 빠를 수 없습니다.");
       err.statusCode = 400;
       throw err;
     }
@@ -190,23 +183,21 @@ async function update({
       ...(categoryId !== undefined ? { categoryId } : {}),
       ...(isCompleted !== undefined ? { isCompleted } : {}),
 
-      // ??start/end???�요�?�� ?�거?? allDay ?�책?�로 ?�해 강제 ??��??경우???�??
       ...(nextIsAllDay
         ? { startDate: normalizedStart, endDate: normalizedEnd }
         : {
-          ...(startDate !== undefined ? { startDate: startDate } : {}),
-          ...(endDate !== undefined ? { endDate: endDate } : {}),
-        }),
+            ...(startDate !== undefined ? { startDate } : {}),
+            ...(endDate !== undefined ? { endDate } : {}),
+          }),
     },
     include: { category: true },
   });
 }
 
-
 async function toggle({ userId, id }) {
   const exists = await prisma.todo.findFirst({ where: { id, userId } });
   if (!exists) {
-    const err = new Error("Todo not found");
+    const err = new Error("할 일을 찾을 수 없습니다.");
     err.statusCode = 404;
     throw err;
   }
@@ -221,7 +212,7 @@ async function toggle({ userId, id }) {
 async function remove({ userId, id }) {
   const exists = await prisma.todo.findFirst({ where: { id, userId } });
   if (!exists) {
-    const err = new Error("Todo not found");
+    const err = new Error("할 일을 찾을 수 없습니다.");
     err.statusCode = 404;
     throw err;
   }
@@ -230,5 +221,3 @@ async function remove({ userId, id }) {
 }
 
 module.exports = { create, list, update, toggle, remove };
-
-
