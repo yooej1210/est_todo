@@ -7,7 +7,7 @@ async function create({ userId, name, color }) {
     });
   } catch (e) {
     // UNIQUE(userId, name) 충돌
-    const err = new Error("Category name already exists");
+    const err = new Error("이미 존재하는 카테고리 이름입니다.");
     err.statusCode = 409;
     throw err;
   }
@@ -23,7 +23,7 @@ async function list({ userId }) {
 async function update({ userId, id, name, color }) {
   const exists = await prisma.category.findFirst({ where: { id, userId } });
   if (!exists) {
-    const err = new Error("Category not found");
+    const err = new Error("카테고리를 찾을 수 없습니다.");
     err.statusCode = 404;
     throw err;
   }
@@ -37,7 +37,7 @@ async function update({ userId, id, name, color }) {
       },
     });
   } catch {
-    const err = new Error("Category name already exists");
+    const err = new Error("이미 존재하는 카테고리 이름입니다.");
     err.statusCode = 409;
     throw err;
   }
@@ -46,7 +46,7 @@ async function update({ userId, id, name, color }) {
 async function remove({ userId, id }) {
   const exists = await prisma.category.findFirst({ where: { id, userId } });
   if (!exists) {
-    const err = new Error("Category not found");
+    const err = new Error("카테고리를 찾을 수 없습니다.");
     err.statusCode = 404;
     throw err;
   }

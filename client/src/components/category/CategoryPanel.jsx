@@ -70,7 +70,7 @@ export default function CategoryPanel({
         {categories.map((c) => {
           const colorClass = getCategoryColorClass(c.color);
           return (
-            <div className="cat" key={c.id}>
+            <div className={`cat ${colorClass}`} key={c.id}>
               <div className="left">
                 <div className={`dot ${colorClass}`} />
                 <div className="name">{c.name}</div>

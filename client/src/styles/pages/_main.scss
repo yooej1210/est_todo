@@ -3,25 +3,45 @@
 
 .main-wrap {
   min-height: 100vh;
+  height: 100vh;
   padding: 24px;
   background: $bg;
+  box-sizing: border-box;
 }
 
 .main-shell {
   width: min(1180px, 100%);
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 280px 1fr;
+  display: flex;
   gap: 20px;
+  height: 100%;
 
   @include respond(md) {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    height: auto;
   }
 }
 
-.mainPanel {
+.mainContent {
+  flex: 1;
+  overflow-y: auto;
+
+  @include respond(md) {
+    overflow: visible;
+  }
+}
+
+.mainInner {
+  width: min(980px, 100%);
+  margin: 0 auto;
   display: grid;
   gap: 16px;
+  padding: 6px 0 30px;
+
+  @include respond(md) {
+    width: 100%;
+    padding: 0;
+  }
 }
 
 .mainHeader {
@@ -101,6 +121,9 @@
 .side {
   display: grid;
   gap: 14px;
+  position: sticky;
+  top: 24px;
+  align-self: start;
 
   .sideHeader {
     display: flex;
@@ -165,6 +188,7 @@
     border: 1px solid $border;
     border-radius: 14px;
     background: #fff;
+    border-left: 6px solid var(--swatch-color, #{$border});
 
     .left {
       display: flex;
@@ -172,9 +196,11 @@
       gap: 10px;
 
       .dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
+        width: 16px;
+        height: 16px;
+        border-radius: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: var(--swatch-color, #{$border});
       }
 
       .name {
@@ -193,5 +219,12 @@
         font-size: 11px;
       }
     }
+  }
+}
+
+@include respond(md) {
+  .side {
+    position: static;
+    top: auto;
   }
 }

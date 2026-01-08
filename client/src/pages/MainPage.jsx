@@ -348,7 +348,8 @@ export default function MainPage() {
           palette={CATEGORY_COLORS}
         />
 
-        <main className="panel mainPanel">
+        <main className="mainContent">
+          <div className="mainInner">
           <div className="mainHeader">
             <div>
               <h1 className="title">Todo & 일정</h1>
@@ -406,6 +407,8 @@ export default function MainPage() {
             </div>
             <TodoList todos={todos} onToggle={onToggle} onEditText={onEditText} onDelete={onDelete} />
           </section>
+
+          </div>
 
           <EditTodoModal
             open={editTodoOpen}

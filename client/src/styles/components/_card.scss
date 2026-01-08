@@ -140,7 +140,7 @@
     padding: 3px 8px;
     border-radius: 999px;
     border: 1px solid $border;
-    background: #fff;
+    background: var(--swatch-color, #{$border});
     border-color: var(--swatch-color, #{$border});
     color: $text;
     flex: 0 0 auto;
