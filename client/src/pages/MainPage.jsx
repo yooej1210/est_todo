@@ -8,8 +8,11 @@ import { useNavigate } from "react-router-dom";
 
 import { listTodos, createTodo, updateTodo, toggleTodo, deleteTodo } from "../api/todo.api";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "../api/category.api";
+import EditTodoModal from "../components/modal/EditTodoModal";
+import EditCategoryModal from "../components/modal/EditCategoryModal";
+import ErrorModal from "../components/modal/ErrorModal";
+import ConfirmModal from "../components/modal/ConfirmModal";
 
-// ✅ 노션톤 카테고리 색상 팔레트
 const CATEGORY_COLORS = [
   { name: "Gray", hex: "#E3E3E1" },
   { name: "Brown", hex: "#EADDD8" },
@@ -32,12 +35,28 @@ function toLocalDateInputValue(d = new Date()) {
 export default function MainPage() {
   const nav = useNavigate();
 
-  // ✅ 상태 관리
-  const [filter, setFilter] = useState("today");
+  // ✅ 조회(필터) 상태
+  const [filter, setFilter] = useState("today"); // today | week | date | all
   const [date, setDate] = useState(toLocalDateInputValue());
+
+  // ✅ 데이터
   const [todos, setTodos] = useState([]);
   const [categories, setCategories] = useState([]);
 
+  // ✅ 수정 모달 상태
+  const [editTodoOpen, setEditTodoOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState(null);
+  const [editCategoryOpen, setEditCategoryOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  // ✅ 등록 폼 상태
   const [form, setForm] = useState({
     text: "",
     categoryId: "",
@@ -46,14 +65,36 @@ export default function MainPage() {
     endDate: "",
   });
 
+  // ✅ 카테고리 폼 상태
   const [catForm, setCatForm] = useState({ name: "", color: "#D6EAF3" });
+
+  // ✅ 에러(원하면 ErrorModal로 바꿔도 됨)
   const [err, setErr] = useState("");
+  const showError = (message) => {
+    const msg = message || "문제가 발생했습니다.";
+    setErr(msg);
+    setErrorModal({ open: true, message: msg });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal({ open: false, title: "", message: "", onConfirm: null });
+  };
+
+  const openConfirm = (title, message, onConfirm) => {
+    setConfirmModal({ open: true, title, message, onConfirm });
+  };
+
+  const handleConfirm = async () => {
+    const fn = confirmModal.onConfirm;
+    closeConfirm();
+    if (fn) await fn();
+  };
 
   const selectedParams = useMemo(() => {
     if (filter === "today") return { filter: "today" };
     if (filter === "week") return { filter: "week" };
     if (filter === "date") return { date };
-    return {};
+    return {}; // all
   }, [filter, date]);
 
   const loadAll = async () => {
@@ -63,7 +104,7 @@ export default function MainPage() {
       setTodos(t);
       setCategories(c);
     } catch (e) {
-      setErr(e?.response?.data?.message || "데이터를 불러오지 못했습니다.");
+      showError(e?.response?.data?.message || "데이터를 불러오지 못했습니다.");
       if (e?.response?.status === 401) {
         localStorage.removeItem("accessToken");
         nav("/login", { replace: true });
@@ -75,15 +116,19 @@ export default function MainPage() {
     loadAll();
   }, [filter, date]);
 
-  // ===== Todo 핸들러 =====
+  // ===== Todo =====
   const onCreateTodo = async (e) => {
     e.preventDefault();
     setErr("");
-    if (!form.text.trim()) { setErr("할 일을 입력해주세요."); return; }
+
+    if (!form.text.trim()) {
+      showError("할 일을 입력해주세요.");
+      return;
+    }
 
     const payload = {
       text: form.text.trim(),
-      categoryId: form.categoryId || null,
+      categoryId: form.categoryId ? form.categoryId : null,
       isAllDay: !!form.isAllDay,
       startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
       endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
@@ -94,67 +139,125 @@ export default function MainPage() {
       setTodos((prev) => [created, ...prev]);
       setForm({ text: "", categoryId: "", isAllDay: false, startDate: "", endDate: "" });
     } catch (e2) {
-      setErr(e2?.response?.data?.message || "생성에 실패했습니다.");
+      const msg =
+        e2?.response?.data?.errors?.[0]?.message ||
+        e2?.response?.data?.message ||
+        "생성에 실패했습니다.";
+      showError(msg);
     }
   };
 
   const onToggle = async (id) => {
+    setErr("");
     try {
       const updated = await toggleTodo(id);
       setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
-    } catch { setErr("토글 실패"); }
+    } catch (e) {
+      showError(e?.response?.data?.message || "토글 실패");
+    }
   };
 
   const onEditText = async (t) => {
-    const next = prompt("수정할 내용을 입력하세요.", t.text);
-    if (!next?.trim()) return;
-    try {
-      const updated = await updateTodo(t.id, { text: next.trim() });
-      setTodos((prev) => prev.map((x) => (x.id === t.id ? updated : x)));
-    } catch { setErr("수정 실패"); }
+    setEditingTodo(t);
+    setEditTodoOpen(true);
   };
 
-  const onDelete = async (id) => {
-    if (!confirm("삭제할까요?")) return;
-    try {
-      await deleteTodo(id);
-      setTodos((prev) => prev.filter((t) => t.id !== id));
-    } catch { setErr("삭제 실패"); }
+  const onDelete = (id) => {
+    openConfirm("삭제", "삭제할까요?", async () => {
+      setErr("");
+      try {
+        await deleteTodo(id);
+        setTodos((prev) => prev.filter((t) => t.id !== id));
+      } catch (e) {
+        showError(e?.response?.data?.message || "삭제 실패");
+      }
+    });
   };
 
-  // ===== Category 핸들러 =====
+  // ===== Category =====
   const onCreateCategory = async (e) => {
     e.preventDefault();
-    if (!catForm.name.trim()) return;
+    setErr("");
+
+    if (!catForm.name.trim()) {
+      showError("카테고리 이름을 입력해주세요.");
+      return;
+    }
+
+    const allowed = CATEGORY_COLORS.some((c) => c.hex === catForm.color);
+    const safeColor = allowed ? catForm.color : "#D6EAF3";
+
     try {
-      const created = await createCategory({ name: catForm.name.trim(), color: catForm.color });
+      const created = await createCategory({ name: catForm.name.trim(), color: safeColor });
       setCategories((prev) => [created, ...prev]);
       setCatForm({ name: "", color: "#D6EAF3" });
-    } catch { setErr("카테고리 생성 실패"); }
+    } catch (e2) {
+      const msg =
+        e2?.response?.data?.errors?.[0]?.message ||
+        e2?.response?.data?.message ||
+        "카테고리 생성 실패";
+      showError(msg);
+    }
   };
 
   const onRenameCategory = async (c) => {
-    const name = prompt("카테고리 이름 수정", c.name);
-    if (!name?.trim()) return;
-    try {
-      const updated = await updateCategory(c.id, { name: name.trim() });
-      setCategories((prev) => prev.map((x) => (x.id === c.id ? updated : x)));
-    } catch { setErr("수정 실패"); }
+    setEditingCategory(c);
+    setEditCategoryOpen(true);
   };
 
-  const onDeleteCategory = async (id) => {
-    if (!confirm("카테고리를 삭제할까요?")) return;
-    try {
-      await deleteCategory(id);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
-      loadAll();
-    } catch { setErr("삭제 실패"); }
+  const onDeleteCategory = (id) => {
+    openConfirm("카테고리 삭제", "카테고리를 삭제할까요?", async () => {
+      setErr("");
+      try {
+        await deleteCategory(id);
+        setCategories((prev) => prev.filter((c) => c.id !== id));
+        setForm((p) => (p.categoryId === id ? { ...p, categoryId: "" } : p));
+        loadAll();
+      } catch (e) {
+        showError(e?.response?.data?.message || "삭제 실패");
+      }
+    });
   };
 
   const logout = async () => {
-    try { await logoutApi(); } catch {}
+    try {
+      await logoutApi();
+    } catch {}
     localStorage.removeItem("accessToken");
     nav("/login", { replace: true });
+  };
+
+  const closeEditTodo = () => {
+    setEditTodoOpen(false);
+    setEditingTodo(null);
+  };
+
+  const closeEditCategory = () => {
+    setEditCategoryOpen(false);
+    setEditingCategory(null);
+  };
+
+  const onSubmitEditTodo = async (id, payload) => {
+    setErr("");
+    try {
+      const updated = await updateTodo(id, payload);
+      setTodos((prev) => prev.map((x) => (x.id === id ? updated : x)));
+      closeEditTodo();
+    } catch (e) {
+      showError(e?.response?.data?.message || "수정 실패");
+    }
+  };
+
+  const onSubmitEditCategory = async (payload) => {
+    if (!editingCategory) return;
+    setErr("");
+    try {
+      const updated = await updateCategory(editingCategory.id, payload);
+      setCategories((prev) => prev.map((x) => (x.id === editingCategory.id ? updated : x)));
+      closeEditCategory();
+    } catch (e) {
+      showError(e?.response?.data?.message || "수정 실패");
+    }
   };
 
   return (
@@ -174,40 +277,86 @@ export default function MainPage() {
         <main className="panel">
           <div className="header">
             <div>
-              <h1 className="title">Todo Dashboard</h1>
-              <div className="sub">일정을 등록하고 관리하세요.</div>
+              <h1 className="title">Todo & 일정</h1>
+              <div className="sub">조회(필터)와 등록(폼)을 분리해서 보기 좋게</div>
             </div>
           </div>
 
-          {/* ✅ 1. 등록 섹션 (수직 배치) */}
+          {/* ✅ 1) 조회 섹션 (FilterPanel) */}
           <section className="sectionCard">
-            <div className="sectionTitle">할일 등록</div>
-            <TodoForm form={form} setForm={setForm} categories={categories} onCreateTodo={onCreateTodo} err={err} />
-          </section>
+            <div className="sectionTitle">조회</div>
 
-          {/* ✅ 2. 조회 섹션 */}
-          <section className="sectionCard" style={{ marginTop: 14 }}>
-            <div className="sectionTitle">조회 필터</div>
             <div className="controls" style={{ marginBottom: 0 }}>
               <div className="row">
-                <button className={`chip ${filter === "today" ? "active" : ""}`} onClick={() => setFilter("today")}>오늘</button>
-                <button className={`chip ${filter === "week" ? "active" : ""}`} onClick={() => setFilter("week")}>이번 주</button>
-                <button className={`chip ${filter === "date" ? "active" : ""}`} onClick={() => setFilter("date")}>날짜</button>
-                <button className={`chip ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>전체</button>
+                <button className={`chip ${filter === "today" ? "active" : ""}`} onClick={() => setFilter("today")} type="button">
+                  오늘
+                </button>
+                <button className={`chip ${filter === "week" ? "active" : ""}`} onClick={() => setFilter("week")} type="button">
+                  이번 주
+                </button>
+                <button className={`chip ${filter === "date" ? "active" : ""}`} onClick={() => setFilter("date")} type="button">
+                  날짜
+                </button>
+                <button className={`chip ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")} type="button">
+                  전체
+                </button>
               </div>
+
               {filter === "date" && (
                 <div className="row" style={{ marginTop: 10 }}>
-                  <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                  <Input
+                    label="조회 날짜"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    helper="해당 날짜 범위와 겹치는 일정이 조회됩니다."
+                  />
                 </div>
               )}
             </div>
           </section>
 
-          {/* ✅ 3. 목록 섹션 */}
+          {/* ✅ 2) 등록 섹션 (TodoForm) */}
           <section className="sectionCard" style={{ marginTop: 14 }}>
-            <div className="sectionTitle">할 일 목록</div>
+            <div className="sectionTitle">등록</div>
+            <TodoForm form={form} setForm={setForm} categories={categories} onCreateTodo={onCreateTodo} />
+          </section>
+
+          {/* ✅ 3) 목록 섹션 (TodoList) */}
+          <section className="sectionCard" style={{ marginTop: 14 }}>
+            <div className="sectionTitle">목록</div>
             <TodoList todos={todos} onToggle={onToggle} onEditText={onEditText} onDelete={onDelete} />
           </section>
+
+          <EditTodoModal
+            open={editTodoOpen}
+            todo={editingTodo}
+            categories={categories}
+            onClose={closeEditTodo}
+            onSubmit={onSubmitEditTodo}
+          />
+
+          <EditCategoryModal
+            open={editCategoryOpen}
+            initialName={editingCategory?.name || ""}
+            initialColor={editingCategory?.color || ""}
+            palette={CATEGORY_COLORS}
+            onClose={closeEditCategory}
+            onSubmit={onSubmitEditCategory}
+          />
+          <ErrorModal
+            open={errorModal.open}
+            message={errorModal.message}
+            onClose={() => setErrorModal({ open: false, message: "" })}
+          />
+
+          <ConfirmModal
+            open={confirmModal.open}
+            title={confirmModal.title}
+            message={confirmModal.message}
+            onClose={closeConfirm}
+            onConfirm={handleConfirm}
+          />
         </main>
       </div>
     </div>

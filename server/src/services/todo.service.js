@@ -30,7 +30,7 @@ function endOfDayLocal(d) {
 
 
 function buildOverlapWhere(userId, rangeStart, rangeEnd) {
-  // "기간과 겹치는 일정" 조건:
+  // "기간�?겹치???�정" 조건:
   // startDate <= rangeEnd AND (endDate >= rangeStart OR endDate IS NULL)
   // + startDate IS NOT NULL
   return {
@@ -44,7 +44,17 @@ function buildOverlapWhere(userId, rangeStart, rangeEnd) {
     ],
   };
 }
-
+function buildStartWithinWhere(userId, rangeStart, rangeEnd) {
+  // Filter by startDate only, excluding items that start before the range.
+  return {
+    userId,
+    AND: [
+      { startDate: { not: null } },
+      { startDate: { gte: rangeStart } },
+      { startDate: { lte: rangeEnd } },
+    ],
+  };
+}
 async function create({ userId, text, startDate, endDate, isAllDay, categoryId }) {
   await ensureCategoryOwned(userId, categoryId);
 
@@ -52,7 +62,7 @@ async function create({ userId, text, startDate, endDate, isAllDay, categoryId }
   let e = endDate ?? null;
   const allDay = !!isAllDay;
 
-  // ✅ 정책 강제
+  // ???�책 강제
   if (allDay) {
     if (!s) {
       const err = new Error("isAllDay=true requires startDate");
@@ -60,9 +70,9 @@ async function create({ userId, text, startDate, endDate, isAllDay, categoryId }
       throw err;
     }
     s = startOfDayLocal(s);
-    e = endOfDayLocal(s); // startDate 기준 당일 종료
+    e = endOfDayLocal(s); // startDate 기�? ?�일 종료
   } else {
-    // 일반 일정이면 end < start 방어(둘 다 있을 때)
+    // ?�반 ?�정?�면 end < start 방어(?????�을 ??
     if (s && e && e.getTime() < s.getTime()) {
       const err = new Error("endDate cannot be earlier than startDate");
       err.statusCode = 400;
@@ -87,24 +97,24 @@ async function create({ userId, text, startDate, endDate, isAllDay, categoryId }
 async function list({ userId, date, filter, from, to }) {
   let where = { userId };
 
-  // 우선순위: from/to > date > filter > 전체
+  // ?�선?�위: from/to > date > filter > ?�체
   if (from && to) {
     where = buildOverlapWhere(userId, from, to);
   } else if (date) {
     const d = new Date(`${date}T00:00:00`);
-    where = buildOverlapWhere(userId, startOfDay(d), endOfDay(d));
+    where = buildStartWithinWhere(userId, startOfDay(d), endOfDay(d));
   } else if (filter === "today") {
     const now = new Date();
-    where = buildOverlapWhere(userId, startOfDay(now), endOfDay(now));
+    where = buildStartWithinWhere(userId, startOfDay(now), endOfDay(now));
   } else if (filter === "week") {
     const now = new Date();
-    where = buildOverlapWhere(userId, startOfWeekMonday(now), endOfWeekMonday(now));
+    where = buildStartWithinWhere(userId, startOfWeekMonday(now), endOfWeekMonday(now));
   }
 
   return prisma.todo.findMany({
     where,
     orderBy: [
-      { isAllDay: "desc" },    // 하루종일이 위로 (원하면 삭제)
+      { isAllDay: "desc" },    // ?�루종일???�로 (?�하�???��)
       { startDate: "asc" },
       { createdAt: "desc" },
     ],
@@ -133,16 +143,16 @@ async function update({
     await ensureCategoryOwned(userId, categoryId);
   }
 
-  // ✅ 현재값 + 변경값을 합쳐서 정책 강제
+  // ???�재�?+ 변경값???�쳐???�책 강제
   const nextIsAllDay = isAllDay !== undefined ? isAllDay : exists.isAllDay;
 
-  // startDate/endDate는 "요청에 온 값"이 있으면 그걸 쓰고, 없으면 기존 유지
+  // startDate/endDate??"?�청????�????�으�?그걸 ?�고, ?�으�?기존 ?��?
   const nextStart =
-    startDate !== undefined ? startDate : exists.startDate; // startDate는 Date|null
+    startDate !== undefined ? startDate : exists.startDate; // startDate??Date|null
   const nextEnd =
     endDate !== undefined ? endDate : exists.endDate;
 
-  // 정책 강제
+  // ?�책 강제
   let normalizedStart = nextStart;
   let normalizedEnd = nextEnd;
 
@@ -170,7 +180,7 @@ async function update({
       ...(categoryId !== undefined ? { categoryId } : {}),
       ...(isCompleted !== undefined ? { isCompleted } : {}),
 
-      // ✅ start/end는 “요청이 왔거나, allDay 정책으로 인해 강제 덮어쓴 경우” 저장
+      // ??start/end???�요�?�� ?�거?? allDay ?�책?�로 ?�해 강제 ??��??경우???�??
       ...(nextIsAllDay
         ? { startDate: normalizedStart, endDate: normalizedEnd }
         : {
@@ -210,3 +220,4 @@ async function remove({ userId, id }) {
 }
 
 module.exports = { create, list, update, toggle, remove };
+

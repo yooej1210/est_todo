@@ -7,7 +7,6 @@ export default function TodoForm({
   setForm,
   categories,
   onCreateTodo,
-  err,
 }) {
   return (
     <form className="form-card" onSubmit={onCreateTodo}>
@@ -69,7 +68,6 @@ export default function TodoForm({
         />
       </div>
 
-      {err && <div className="error">{err}</div>}
     </form>
   );
 }

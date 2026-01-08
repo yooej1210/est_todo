@@ -13,14 +13,28 @@ export default function ConfirmModal({
       title={title}
       onClose={onClose}
       footer={
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button className="linkBtn" type="button" onClick={onClose}>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            justifyContent: "flex-end",
+            marginTop: 8,
+            width: "100%",
+          }}
+        >
+          <button
+            className="outlineBtn"
+            type="button"
+            onClick={onClose}
+            style={{ flex: 1 }}
+          >
             취소
           </button>
           <button
             className="primaryBtn"
             type="button"
             onClick={() => onConfirm?.()}
+            style={{ flex: 1 }}
           >
             확인
           </button>

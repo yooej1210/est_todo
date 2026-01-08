@@ -53,17 +53,17 @@ const createSchema = z.object({
   body: z
     .object({
       text: z.string().min(1).max(300),
-      startDate: z.string().datetime().optional().nullable(),
-      endDate: z.string().datetime().optional().nullable(),
+      startDate: z.iso.datetime().optional().nullable(),
+      endDate: z.iso.datetime().optional().nullable(),
       isAllDay: z.boolean().optional(),
       categoryId: z.string().uuid().optional().nullable(),
     })
     .superRefine((val, ctx) => {
       if (val.isAllDay === true && !val.startDate) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["startDate"],
-          message: "isAllDay=true일 때 startDate는 필수입니다.",
+          message: "하루 종일 선택 시 시작 일시도 함께 보내주세요.",
         });
       }
 
@@ -72,9 +72,9 @@ const createSchema = z.object({
         const e = new Date(val.endDate).getTime();
         if (e < s) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["endDate"],
-            message: "endDate는 startDate보다 빠를 수 없습니다.",
+            message: "종료 일시는 시작 일시보다 빠를 수 없어요",
           });
         }
       }
@@ -86,8 +86,8 @@ const updateSchema = z.object({
   body: z
     .object({
       text: z.string().min(1).max(300).optional(),
-      startDate: z.string().datetime().optional().nullable(),
-      endDate: z.string().datetime().optional().nullable(),
+      startDate: z.iso.datetime().optional().nullable(),
+      endDate: z.iso.datetime().optional().nullable(),
       isAllDay: z.boolean().optional(),
       categoryId: z.string().uuid().optional().nullable(),
       isCompleted: z.boolean().optional(),
@@ -95,7 +95,7 @@ const updateSchema = z.object({
     .superRefine((val, ctx) => {
       if (val.isAllDay === true && val.startDate === undefined) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["startDate"],
           message: "하루 종일 선택 시 시작 일시도 함께 보내주세요.",
         });
@@ -106,7 +106,7 @@ const updateSchema = z.object({
         const e = new Date(val.endDate).getTime();
         if (e < s) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["endDate"],
             message: "종료 일시는 시작 일시보다 빠를 수 없어요",
           });
@@ -123,8 +123,8 @@ const listSchema = z.object({
   query: z.object({
     date: z.string().optional(),
     filter: z.enum(["today", "week"]).optional(),
-    from: z.string().datetime().optional(),
-    to: z.string().datetime().optional(),
+    from: z.iso.datetime().optional(),
+    to: z.iso.datetime().optional(),
   }),
 });
 
