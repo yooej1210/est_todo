@@ -1,138 +1,118 @@
-﻿# Todo 일정관리 서비스
+# Todo 일정관리 서비스 (Intern Study STEP 1)
 
-JWT 인증과 카테고리/일정 관리를 포함한 Todo API + React 클라이언트 프로젝트입니다.
+본 프로젝트는 사용자 맞춤형 일정 관리와 카테고리 분류 기능을 제공하는 풀스택 웹 애플리케이션입니다. RDBMS를 활용한 데이터 모델링과 Redis를 이용한 인증 최적화에 중점을 두어 설계되었습니다.
 
-## 프로젝트 실행 방법
+## 1. 프로젝트 실행 방법
 
 ### 사전 준비
-- Node.js (권장: 18+)
-- PostgreSQL
-- Redis
+- Node.js: v18.0.0 이상
+- Database: PostgreSQL (로컬 설치 및 실행 필요)
+- Docker: Redis 컨테이너 실행용
 
-### 서버 실행
+### 서버 (Server)
 1) `server` 폴더로 이동 후 의존성 설치
 ```bash
 cd server
 npm install
 ```
 
-2) `.env` 설정
+2) `.env` 파일 설정 (JWT Secret, DB URL, Redis URL 등)
+
+3) Prisma 마이그레이션 실행
 ```bash
-# server/.env 예시 (운영 기준 포맷)
-PORT=4000
-DATABASE_URL=postgresql://todo_user:STRONG_PASSWORD@db.example.com:5432/todo_prod
-JWT_ACCESS_SECRET=CHANGE_ME_ACCESS_32PLUS_CHARS
-JWT_REFRESH_SECRET=CHANGE_ME_REFRESH_32PLUS_CHARS
-ACCESS_TOKEN_TTL=15m
-REFRESH_TOKEN_TTL_SEC=1209600
-REDIS_URL=redis://localhost:6379
+npx prisma migrate dev
 ```
 
-3) DB 마이그레이션 및 실행
+4) 서버 실행 (기본 4000 포트)
 ```bash
-npm run db:migrate
 npm run dev
 ```
 
-4) API 문서
-- `http://localhost:4000/api-docs`
-
-### 클라이언트 실행
+### 클라이언트 (Client)
 1) `client` 폴더로 이동 후 의존성 설치
 ```bash
 cd client
 npm install
 ```
 
-2) `.env` 설정 (필요 시)
-```bash
-# client/.env 예시 (운영 기준 포맷)
-VITE_API_BASE_URL=https://api.example.com
-```
-
-3) 개발 서버 실행
+2) 개발 서버 실행
 ```bash
 npm run dev
 ```
 
-## ERD 및 테이블 설계 설명
+## 2. ERD 및 테이블 설계
 
-### ERD 이미지
-![ERD](docs/erd.png)
+### 데이터 모델링 의존성 및 정책
+- User (1) : Category (N) / User (1) : Todo (N)
+- Category (1) : Todo (N) (Optional 관계)
 
-### ERD (텍스트 표현)
-```
-User 1 --- N Category
-User 1 --- N Todo
-Category 1 --- N Todo (nullable)
-```
+### 삭제 정책 (Delete Policy)
+- User 삭제 시 관련 Category, Todo 모두 CASCADE 삭제하여 데이터 무결성 유지
+- Category 삭제 시 연결된 Todo의 `category_id`는 SET NULL 처리하여 일정 데이터가 유실되지 않도록 설계
 
-### 테이블 요약
-- `users`
-  - `id (UUID)`, `email (unique)`, `nickname`, `password`, `created_at`, `updated_at`
-- `categories`
-  - `id (UUID)`, `user_id (FK)`, `name`, `color`, `created_at`, `updated_at`
-  - 제약: `UNIQUE(user_id, name)`
-  - 기본 색상: `#D6EAF3`
-- `todos`
-  - `id (UUID)`, `user_id (FK)`, `category_id (FK, nullable)`
-  - `text`, `start_date`, `end_date`, `is_all_day`, `is_completed`, `created_at`, `updated_at`
-  - 인덱스: `(user_id, start_date)`
+### 주요 테이블 요약
+| 테이블 | 설명 | 핵심 컬럼 |
+| --- | --- | --- |
+| users | 사용자 정보 | email(unique), password(hashed), nickname |
+| categories | 일정 분류 | name, color, user_id(FK) |
+| todos | 일정/할 일 | text, start_date, end_date, is_completed, is_all_day |
 
-### 관계/정책
-- `users` 삭제 시: 관련 `categories`, `todos`는 `CASCADE` 삭제
-- `categories` 삭제 시: 관련 `todos.category_id`는 `SET NULL` 처리
+## 3. Redis 활용 및 인증 구조
 
-## Redis 사용 방식 설명
+### Redis 도입 이유 및 구현 상세
+단순한 JWT 기반 인증은 토큰 탈취 시 즉각적인 무효화가 어렵습니다. 본 프로젝트는 보안성을 극대화하기 위해 Redis를 상태 저장소로 활용하여 인증 시스템을 보완했습니다.
 
-- **Refresh Token 저장소**
-  - 키: `refresh:{userId}`
-  - 로그인 시 refresh token 저장, TTL은 `REFRESH_TOKEN_TTL_SEC` 기준
-- **Refresh Token 회전(rotate)**
-  - `/api/auth/refresh` 호출 시 새 refresh 발급 후 Redis 갱신
-- **Access Token 블랙리스트**
-  - 로그아웃 시 access token의 `jti`를 `bl:access:{jti}`로 저장
-  - TTL은 access token 만료 시간 기준
-- **인증 미들웨어**
-  - 요청마다 `bl:access:{jti}` 조회로 즉시 폐기된 토큰 차단
+### Refresh Token Rotation (RTR)
+- 구현: 로그인 시 발급된 Refresh Token을 Redis에 `refresh:{userId}` 키 형태로 저장
+- 동작: 토큰 갱신 요청 시 클라이언트의 토큰과 Redis 내 토큰을 대조. 불일치할 경우 토큰 탈취로 간주하고 Redis 내 토큰을 삭제
 
-## 주요 설계 판단 및 트레이드오프
+### Access Token Blacklist
+- 구현: 로그아웃 시 사용 중인 Access Token의 jti(Unique ID)를 추출하여 `bl:access:{jti}` 키로 Redis에 등록
+- 수명 관리: 블랙리스트의 TTL(Time-To-Live)은 해당 Access Token의 남은 수명만큼 설정
+- 검증: 모든 인증 미들웨어에서 DB 접근 전 Redis를 우선 조회하여 블랙리스트 여부 체크
 
-- **Refresh 토큰 서버 저장(상태 저장형)**
-  - 장점: 로그아웃/만료 관리가 명확, 토큰 재사용 방지
-  - 단점: Redis 의존 및 상태 관리 비용 증가
-- **Access 토큰 블랙리스트 조회**
-  - 장점: 로그아웃 즉시 반영
-  - 단점: 매 요청 Redis 조회 비용 발생
-- **일정 겹침 조회(기간 필터)**
-  - 장점: 주/일/기간 조회에 유연
-  - 단점: 조건이 복잡해져 쿼리 튜닝 필요 가능성
-- **All-day 일정 정규화**
-  - `isAllDay=true`일 때 `start_date`를 00:00, `end_date`를 23:59:59.999로 보정
-  - 장점: 조회/정렬 일관성
-  - 단점: 타임존 처리 시 주의 필요
-- **카테고리 선택을 선택사항으로 설계**
-  - 장점: 카테고리 없이도 Todo 생성 가능
-  - 단점: 분류 없는 데이터가 늘어날 수 있음
+### 도커(Docker) 기반 Redis 환경 구성
+- 환경 경량화: 호스트 OS에 Redis를 직접 설치하지 않고 공식 Redis 이미지로 독립된 캐시 서버 환경 구축
+- 일관성 유지: docker run 또는 docker-compose로 고정된 버전의 Redis 환경 실행
+- 인프라 분리: PostgreSQL(영구 데이터)과 Redis(휘발성 인증 데이터)를 분리 운영
 
-## 데일리 작업 기록 (실제 진행 기록)
+## 4. Frontend & 스타일링 전략 (SCSS)
 
-### Day 1
-- 진행한 작업: 프로젝트 기본 구조 세팅(server/client), Prisma 스키마(User/Category/Todo) 정의 및 초기 마이그레이션 생성
-- 진행한 작업: 기본 테이블 관계 설정(User-Category, User-Todo, Category-Todo) 및 제약 검토
-- 고민한 점: 카테고리 삭제 시 Todo를 함께 삭제할지, 분리해 유지할지 결정(Set Null 선택)
-- 남은 과제: Todo 스키마 개선(텍스트/일정), 인증 플로우 설계
+과제 요구사항에 따라 CSS 단일 파일을 지양하고 SCSS 아키텍처를 구조화했습니다.
 
-### Day 2
-- 진행한 작업: Todo `title/content` 구조를 `text` 단일 필드로 통합 마이그레이션
-- 진행한 작업: 일정 필드(`start_date`, `end_date`, `is_all_day`) 추가 및 인덱스 재설계
-- 진행한 작업: 카테고리 컬러 정책 확정(기본값/허용 색상), 컬럼 타입/제약 보강
-- 고민한 점: 종일 일정의 날짜 정규화 기준(00:00~23:59:59.999)과 조회 조건 충돌 방지
-- 남은 과제: JWT/Redis 기반 인증/세션 관리, API 문서 정리
+### 구조화 (Modularization)
+- `_variables.scss`: 브랜드 컬러($primary), 폰트 사이즈 등 상수 관리
+- `_mixins.scss`: Flexbox 중앙 정렬, 미디어 쿼리(반응형) 등 재사용 로직
+- `_base.scss`: Reset 및 공통 태그 스타일
 
-### Day 3
-- 진행한 작업: JWT 인증(Access/Refresh) 구현 및 Redis에 Refresh 저장/회전 로직 추가
-- 진행한 작업: 로그아웃 시 Access 토큰 블랙리스트 처리, 인증 미들웨어에 폐기 토큰 체크 추가
-- 진행한 작업: Todo/Category CRUD 및 필터(오늘/주간/기간 겹침) API 구현
-- 고민한 점: 매 요청 Redis 조회 비용과 보안(즉시 로그아웃 반영) 간의 트레이드오프
-- 남은 과제: 테스트 추가, 예외 메시지 정리, 배포 환경 설정
+### 컴포넌트 스타일링
+- Button, Input 등 공통 UI 요소는 별도 Partial 파일로 분리하여 관리
+- Nesting 구조를 활용하여 클래스명 충돌 방지 및 가독성 확보
+
+## 5. 설계 판단 및 트레이드오프
+
+- Todo 테이블 통합: 일정(Schedule)과 할 일(Todo)을 분리하지 않고 `start_date` 유무로 구분하도록 통합 설계. 쿼리 복잡도를 줄이는 대신 필터링 로직의 정교함이 요구됨
+- All-day 일정 보정: 종일 일정의 경우 서버단에서 시간을 00:00:00 ~ 23:59:59로 강제 보정하여 기간 검색 시 누락 방지
+
+## 6. 데일리 작업 기록 (Daily Log)
+
+### Day 1: 기초 설계 및 스키마 정의
+- 작업 범위: ERD 설계, Prisma 초기 세팅, User/Category/Todo 관계 정의, 초기 마이그레이션 생성
+- 주요 파일: `server/prisma/schema.prisma`, `server/prisma/migrations/*`
+- 시행착오/문제 해결: 카테고리 삭제 시 일정 유실 위험을 고려해 `SET NULL` 정책으로 조정, 유니크 제약 및 FK 관계 재검토
+- 테스트/검증: `npx prisma migrate dev` 실행 후 테이블 생성 확인
+
+### Day 2: 기능 구현 및 데이터 정규화
+- 작업 범위: Todo CRUD API 개발, 날짜 기반 필터(오늘/주간/기간) 쿼리 작성, 일정/할 일 통합 구조 정리
+- 주요 파일: `server/src` 내 todo 관련 라우트/서비스/쿼리
+- 시행착오/문제 해결: Timezone 문제를 줄이기 위해 DB에는 UTC 저장, 클라이언트 변환 방식으로 정리
+- 테스트/검증: CRUD 및 날짜 필터 API를 수동 호출하여 정상 응답 확인
+
+### Day 3: 인증 고도화 및 스타일링
+- 작업 범위: Refresh Token Rotation, Access Token Blacklist 구현, SCSS 아키텍처 구축 및 UI 컴포넌트 정리
+- 주요 파일: `server/src` 내 auth/redis 관련 모듈, `client/src/styles/*`
+- 시행착오/문제 해결: 매 요청 Redis 조회 비용과 보안 요구사항을 비교 검토 후 블랙리스트 방식 유지
+- 테스트/검증: 로그인-갱신-로그아웃 플로우 수동 호출로 토큰 회전 및 블랙리스트 동작 확인
+
+### 최종 요약
+핵심 요구사항인 인증과 일정 관리를 마쳤으며, SCSS 변수를 통해 일관된 UI 톤을 유지했습니다.
