@@ -59,7 +59,7 @@ export default function TodoItem({ t, onToggle, onEditText, onDelete }) {
 
       <div className="actions">
         <button
-          className="linkBtn"
+          className="linkBtn iconBtn"
           type="button"
           onClick={() => onToggle(t.id)}
         >
@@ -67,7 +67,7 @@ export default function TodoItem({ t, onToggle, onEditText, onDelete }) {
         </button>
 
         <button
-          className="linkBtn"
+          className="linkBtn iconBtn"
           type="button"
           onClick={() => onEditText(t)}
         >
@@ -75,7 +75,7 @@ export default function TodoItem({ t, onToggle, onEditText, onDelete }) {
         </button>
 
         <button
-          className="linkBtn danger"
+          className="linkBtn danger iconBtn"
           type="button"
           onClick={() => onDelete(t.id)}
         >
