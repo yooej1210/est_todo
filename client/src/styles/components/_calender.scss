@@ -1,0 +1,56 @@
+@use '../base/variables' as *;
+@use '../base/mixins' as *;
+.calendar-container {
+  .react-calendar {
+    width: 100%;
+    border: none;
+    background: transparent;
+
+    .react-calendar__tile {
+      height: 90px; // ✅ 충분한 높이 확보
+      padding: 5px 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      border-radius: 8px;
+      
+      &:hover { background-color: #f8f9fa; }
+      
+      abbr { margin-bottom: 4px; font-weight: bold; text-decoration: none; }
+    }
+
+    .react-calendar__tile--active {
+      background: #4f46e5 !important;
+      color: white !important;
+    }
+  }
+}
+
+/* 일정 바 스타일 */
+.todo-bar-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.todo-bar {
+  width: 100%;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  color: #444;
+  border-left: 2px solid rgba(0,0,0,0.1);
+}
+
+.more {
+  font-size: 9px;
+  color: #999;
+  text-align: center;
+}
