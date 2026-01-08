@@ -19,7 +19,7 @@ export default function TodoForm({
 
       <div className="two">
         <div>
-          <label style={{ fontSize: 13, fontWeight: 700 }}>카테고리</label>
+          <label className="formLabel">카테고리</label>
           <select
             className="input"
             value={form.categoryId}
@@ -35,7 +35,7 @@ export default function TodoForm({
           <div className="helper">카테고리는 사용자 본인 것만 사용됩니다.</div>
         </div>
 
-        <div className="inline" style={{ justifyContent: "space-between" }}>
+        <div className="inline">
           <label className="check">
             <input
               type="checkbox"
@@ -45,7 +45,7 @@ export default function TodoForm({
             하루종일
           </label>
 
-          <div style={{ width: 140 }}>
+          <div className="formAction">
             <Button>등록</Button>
           </div>
         </div>

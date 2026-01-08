@@ -13,20 +13,11 @@ export default function ConfirmModal({
       title={title}
       onClose={onClose}
       footer={
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            justifyContent: "flex-end",
-            marginTop: 8,
-            width: "100%",
-          }}
-        >
+        <div className="modalFooterActions">
           <button
             className="outlineBtn"
             type="button"
             onClick={onClose}
-            style={{ flex: 1 }}
           >
             취소
           </button>
@@ -34,14 +25,13 @@ export default function ConfirmModal({
             className="primaryBtn"
             type="button"
             onClick={() => onConfirm?.()}
-            style={{ flex: 1 }}
           >
             확인
           </button>
         </div>
       }
     >
-      <p style={{ margin: 0, color: "#374151", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+      <p className="modalMessage">
         {message}
       </p>
     </Modal>

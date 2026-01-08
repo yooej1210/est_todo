@@ -138,20 +138,11 @@ export default function EditTodoModal({
       title="할 일 수정"
       onClose={onClose}
       footer={
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            justifyContent: "flex-end",
-            marginTop: 8,
-            width: "100%",
-          }}
-        >
+        <div className="modalFooterActions">
           <button
             type="button"
             className="outlineBtn"
             onClick={onClose}
-            style={{ flex: 1 }}
           >
             취소
           </button>
@@ -160,17 +151,16 @@ export default function EditTodoModal({
             type="submit"
             form="editTodoForm"
             className="primaryBtn"
-            style={{ flex: 1 }}
           >
             저장
           </button>
         </div>
       }
     >
-      <form id="editTodoForm" onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+      <form id="editTodoForm" onSubmit={handleSubmit} className="modalForm">
         {/* text */}
-        <div>
-          <label style={{ fontSize: 13, fontWeight: 800, display: "block", marginBottom: 8 }}>
+        <div className="modalField">
+          <label className="modalLabel">
             내용
           </label>
           <input
@@ -180,15 +170,15 @@ export default function EditTodoModal({
             placeholder="할 일 / 일정 내용"
             autoFocus
           />
-          <div className="helper" style={{ marginTop: 8 }}>
+          <div className="helper modalHelper">
             Enter로 저장, ESC로 닫기
           </div>
         </div>
 
         {/* category + allDay */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 10 }}>
-          <div>
-            <label style={{ fontSize: 13, fontWeight: 800, display: "block", marginBottom: 8 }}>
+        <div className="modalFormRow modalFormRow--split">
+          <div className="modalField">
+            <label className="modalLabel">
               카테고리
             </label>
             <select
@@ -205,8 +195,8 @@ export default function EditTodoModal({
             </select>
           </div>
 
-          <div style={{ display: "flex", alignItems: "end" }}>
-            <label className="check" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div className="modalCheckWrap">
+            <label className="check modalCheck">
               <input
                 type="checkbox"
                 checked={isAllDay}
@@ -218,9 +208,9 @@ export default function EditTodoModal({
         </div>
 
         {/* start/end */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div>
-            <label style={{ fontSize: 13, fontWeight: 800, display: "block", marginBottom: 8 }}>
+        <div className="modalFormRow modalFormRow--two">
+          <div className="modalField">
+            <label className="modalLabel">
               {isAllDay ? "시작일" : "시작일시"}
             </label>
 
@@ -232,8 +222,8 @@ export default function EditTodoModal({
             />
           </div>
 
-          <div>
-            <label style={{ fontSize: 13, fontWeight: 800, display: "block", marginBottom: 8 }}>
+          <div className="modalField">
+            <label className="modalLabel">
               {isAllDay ? "종료일" : "종료일시"}
             </label>
 
@@ -245,7 +235,7 @@ export default function EditTodoModal({
             />
 
             {isAllDay && (
-              <div className="helper" style={{ marginTop: 6 }}>
+              <div className="helper modalHelper modalHelper--tight">
                 하루종일이면 시간은 저장되지 않고 날짜 기준으로 처리돼요.
               </div>
             )}

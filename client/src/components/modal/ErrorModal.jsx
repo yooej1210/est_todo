@@ -13,14 +13,7 @@ export default function ErrorModal({ open, title = "오류", message, onClose })
         </button>
       }
     >
-      <p
-        style={{
-          margin: 0,
-          color: "#374151",
-          lineHeight: 1.5,
-          whiteSpace: "pre-wrap",
-        }}
-      >
+      <p className="modalMessage">
         {message || "문제가 발생했습니다."}
       </p>
     </Modal>

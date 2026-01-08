@@ -12,18 +12,7 @@ import EditTodoModal from "../components/modal/EditTodoModal";
 import EditCategoryModal from "../components/modal/EditCategoryModal";
 import ErrorModal from "../components/modal/ErrorModal";
 import ConfirmModal from "../components/modal/ConfirmModal";
-
-const CATEGORY_COLORS = [
-  { name: "Gray", hex: "#E3E3E1" },
-  { name: "Brown", hex: "#EADDD8" },
-  { name: "Orange", hex: "#F6D7B8" },
-  { name: "Yellow", hex: "#F3E5A6" },
-  { name: "Green", hex: "#DCE8DA" },
-  { name: "Blue", hex: "#D6EAF3" },
-  { name: "Purple", hex: "#E8E0F0" },
-  { name: "Pink", hex: "#F2DCE6" },
-  { name: "Red", hex: "#F4D0CC" },
-];
+import { CATEGORY_COLORS } from "../constants/categoryColors";
 
 function toLocalDateInputValue(d = new Date()) {
   const yyyy = d.getFullYear();
@@ -337,6 +326,14 @@ export default function MainPage() {
     }
   };
 
+  const filterLabels = {
+    today: "오늘",
+    week: "이번 주",
+    date: "날짜",
+    all: "전체",
+  };
+  const currentFilterLabel = filterLabels[filter] || "전체";
+
   return (
     <div className="main-wrap">
       <div className="main-shell">
@@ -351,8 +348,8 @@ export default function MainPage() {
           palette={CATEGORY_COLORS}
         />
 
-        <main className="panel">
-          <div className="header">
+        <main className="panel mainPanel">
+          <div className="mainHeader">
             <div>
               <h1 className="title">Todo & 일정</h1>
               <div className="sub">오늘의 할 일과 중요한 일정을 한눈에 확인하고, 새로운 계획을 손쉽게 추가해 보세요.</div>
@@ -360,7 +357,7 @@ export default function MainPage() {
           </div>
 
           {/* ✅ 1) 등록 섹션 (TodoForm) */}
-          <section className="sectionCard" style={{ marginTop: 10, marginBottom : 14 }}>
+          <section className="sectionCard">
             <div className="sectionTitle">등록</div>
             <TodoForm form={form} setForm={setForm} categories={categories} onCreateTodo={onCreateTodo} />
           </section>
@@ -370,7 +367,7 @@ export default function MainPage() {
             <div className="sectionTitle">조회</div>
 
             <div className="controls">
-              <div className="row">
+              <div className="controlsRow">
                 <button className={`chip ${filter === "today" ? "active" : ""}`} onClick={() => setFilter("today")} type="button">
                   오늘
                 </button>
@@ -386,7 +383,7 @@ export default function MainPage() {
               </div>
 
               {filter === "date" && (
-                <div className="row" style={{ marginTop: 10 }}>
+                <div className="controlsRow controlsRow--date">
                   <Input
                     label="조회 날짜"
                     type="date"
@@ -402,8 +399,11 @@ export default function MainPage() {
 
 
           {/* ✅ 3) 목록 섹션 (TodoList) */}
-          <section className="sectionCard" style={{ marginTop: 14 }}>
-            <div className="sectionTitle">목록</div>
+          <section className="sectionCard">
+            <div className="sectionHeader">
+              <div className="sectionTitle">목록 - {currentFilterLabel}</div>
+              <div className="sectionMeta">{todos.length}개</div>
+            </div>
             <TodoList todos={todos} onToggle={onToggle} onEditText={onEditText} onDelete={onDelete} />
           </section>
 

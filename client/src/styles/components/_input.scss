@@ -6,12 +6,23 @@
   border: 1px solid $border;
   border-radius: 10px;
   outline: none;
-  background: #fff;
+  background: #f9fafb;
 
   &:focus {
     border-color: rgba($primary, 0.75);
     box-shadow: 0 0 0 4px rgba($primary, 0.12);
   }
+}
+
+.row {
+  display: grid;
+  gap: 6px;
+}
+
+.inputLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: $text;
 }
 
 .helper {

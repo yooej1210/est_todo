@@ -1,4 +1,4 @@
-import Button from "../Button";
+import { getCategoryColorClass } from "../../constants/categoryColors";
 
 function fmtShort(dt, isAllDay = false) {
   if (!dt) return "-";
@@ -16,6 +16,7 @@ function fmtShort(dt, isAllDay = false) {
 export default function TodoItem({ t, onToggle, onEditText, onDelete }) {
   const color = t?.category?.color || "#e5e7eb";
   const catName = t?.category?.name || "미분류";
+  const colorClass = getCategoryColorClass(color);
 
   const metaParts = [];
 
@@ -35,7 +36,7 @@ export default function TodoItem({ t, onToggle, onEditText, onDelete }) {
     <div className={`todo-item ${t.isCompleted ? "done" : ""}`}>
       <div className="left">
         <div className="title-row">
-          <span className="dot" style={{ background: color }} />
+          <span className={`dot ${colorClass}`} />
           <div className="main">{t.text}</div>
 
           {t.isCompleted ? (
@@ -46,10 +47,7 @@ export default function TodoItem({ t, onToggle, onEditText, onDelete }) {
         </div>
 
         <div className="meta-row">
-          <span
-            className="pill"
-            style={{ borderColor: color, color }}
-          >
+          <span className={`pill ${colorClass}`}>
             #{catName}
           </span>
 

@@ -40,12 +40,30 @@
   }
 }
 
+.linkBtn.iconBtn {
+  color: $text;
+  background: #f9fafb;
+  border: 1px solid $border;
+  text-decoration: none;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.linkBtn.iconBtn.danger {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+}
+
 .primaryBtn {
   width: 100%;
   border: none;
   cursor: pointer;
   border-radius: 12px;
-  padding: 10px 12px;
+  height: 44px;
+  padding: 0 14px;
   font-size: 13px;
   font-weight: 900;
   background: $primary;

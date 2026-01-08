@@ -12,23 +12,28 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: 18px;
+  gap: 20px;
 
   @include respond(md) {
     grid-template-columns: 1fr;
   }
 }
 
-.header {
+.mainPanel {
+  display: grid;
+  gap: 16px;
+}
+
+.mainHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 2px;
 
   .title {
     margin: 0;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 900;
   }
 
@@ -39,51 +44,116 @@
   }
 }
 
-// 카드 공통 스타일
 .sectionCard {
   background: #fff;
-  border-radius: 16px;
-  padding: 24px; // 내부 여백을 조금 더 넉넉하게
+  border-radius: 18px;
+  padding: 22px;
   border: 1px solid $border;
-  overflow: hidden; // 내부 요소가 튀어나오지 않게 방지
+  overflow: hidden;
 }
 
-.sectionTitle {
-  font-size: 13px;
-  font-weight: 800;
-  margin-bottom: 16px;
-  color: $text;
-  opacity: 0.6;
-  text-transform: uppercase;
-}
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
 
-// 조회 컨트롤 스타일
-.controls {
-  display: grid;
-  gap: 10px;
-
-  .row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+  .sectionTitle {
+    margin: 0;
   }
 }
 
-// 목록 스타일
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 900;
+  margin: 0 0 12px;
+  color: $text;
+}
+
+.sectionMeta {
+  font-size: 12px;
+  font-weight: 700;
+  color: $muted;
+}
+
+.controls {
+  display: grid;
+  gap: 12px;
+
+  .controlsRow {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .controlsRow--date {
+    margin-top: 10px;
+  }
+}
+
 .list {
   margin-top: 14px;
   display: grid;
   gap: 10px;
 }
 
-// 사이드바 카테고리 스타일
 .side {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+
+  .sideHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .sideTitleGroup {
+    display: grid;
+    gap: 4px;
+  }
+
+  .sideTitle {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .sideSub {
+    font-size: 12px;
+    color: $muted;
+  }
+
+  .sideLogout {
+    padding: 6px 8px;
+  }
+
+  .categoryForm {
+    gap: 14px;
+  }
+
+  .categoryColor {
+    display: grid;
+    gap: 8px;
+  }
+
+  .categoryActions {
+    display: flex;
+    justify-content: stretch;
+  }
+
+  .categoryAddBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 42px;
+  }
 
   .cat-list {
     display: grid;
-    gap: 8px;
+    gap: 10px;
   }
 
   .cat {
@@ -91,9 +161,9 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid $border;
-    border-radius: 12px;
+    border-radius: 14px;
     background: #fff;
 
     .left {
@@ -102,8 +172,8 @@
       gap: 10px;
 
       .dot {
-        width: 10px;
-        height: 10px;
+        width: 12px;
+        height: 12px;
         border-radius: 999px;
       }
 
