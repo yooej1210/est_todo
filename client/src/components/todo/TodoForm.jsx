@@ -32,7 +32,7 @@ export default function TodoForm({
               </option>
             ))}
           </select>
-          <div className="helper">선택한 카테고리는 사용자 본인 것만 사용됩니다.</div>
+          <div className="helper">카테고리는 사용자 본인 것만 사용됩니다.</div>
         </div>
 
         <div className="inline" style={{ justifyContent: "space-between" }}>

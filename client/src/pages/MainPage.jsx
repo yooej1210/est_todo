@@ -32,6 +32,67 @@ function toLocalDateInputValue(d = new Date()) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function startOfDayLocal(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDayLocal(d) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+function startOfWeekMondayLocal(d) {
+  const x = new Date(d);
+  const day = x.getDay(); // 0=Sun, 1=Mon
+  const diff = (day === 0 ? -6 : 1) - day;
+  x.setDate(x.getDate() + diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfWeekMondayLocal(d) {
+  const start = startOfWeekMondayLocal(d);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
+function todoMatchesFilter(todo, filter, dateValue) {
+  if (filter === "all") return true;
+  if (!todo?.startDate) return false;
+  const start = new Date(todo.startDate);
+  if (filter === "today") {
+    const now = new Date();
+    return start >= startOfDayLocal(now) && start <= endOfDayLocal(now);
+  }
+  if (filter === "week") {
+    const now = new Date();
+    return start >= startOfWeekMondayLocal(now) && start <= endOfWeekMondayLocal(now);
+  }
+  if (filter === "date") {
+    if (!dateValue) return true;
+    const d = new Date(`${dateValue}T00:00:00`);
+    return start >= startOfDayLocal(d) && start <= endOfDayLocal(d);
+  }
+  return true;
+}
+
+function sortTodos(list) {
+  return [...list].sort((a, b) => {
+    if (!!a.isAllDay !== !!b.isAllDay) return a.isAllDay ? -1 : 1;
+    const aStart = a.startDate ? new Date(a.startDate).getTime() : Number.POSITIVE_INFINITY;
+    const bStart = b.startDate ? new Date(b.startDate).getTime() : Number.POSITIVE_INFINITY;
+    if (aStart !== bStart) return aStart - bStart;
+    const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bCreated - aCreated;
+  });
+}
+
 export default function MainPage() {
   const nav = useNavigate();
 
@@ -222,7 +283,7 @@ export default function MainPage() {
   const logout = async () => {
     try {
       await logoutApi();
-    } catch {}
+    } catch { }
     localStorage.removeItem("accessToken");
     nav("/login", { replace: true });
   };
@@ -240,8 +301,18 @@ export default function MainPage() {
   const onSubmitEditTodo = async (id, payload) => {
     setErr("");
     try {
-      await updateTodo(id, payload);
-      await loadAll();
+      const updated = await updateTodo(id, payload);
+      setTodos((prev) => {
+        const shouldStay = todoMatchesFilter(updated, filter, date);
+        if (!shouldStay) {
+          return sortTodos(prev.filter((t) => t.id !== id));
+        }
+        const exists = prev.some((t) => t.id === id);
+        const next = exists
+          ? prev.map((t) => (t.id === id ? updated : t))
+          : [updated, ...prev];
+        return sortTodos(next);
+      });
       closeEditTodo();
     } catch (e) {
       showError(e?.response?.data?.message || "수정 실패");
@@ -252,8 +323,15 @@ export default function MainPage() {
     if (!editingCategory) return;
     setErr("");
     try {
-      await updateCategory(editingCategory.id, payload);
-      await loadAll();
+      const updated = await updateCategory(editingCategory.id, payload);
+      setCategories((prev) => prev.map((x) => (x.id === editingCategory.id ? updated : x)));
+      setTodos((prev) =>
+        prev.map((t) => {
+          const catId = t.category?.id || t.categoryId;
+          if (catId !== updated.id) return t;
+          return { ...t, categoryId: updated.id, category: updated };
+        })
+      );
       closeEditCategory();
     } catch (e) {
       showError(e?.response?.data?.message || "수정 실패");
@@ -278,15 +356,21 @@ export default function MainPage() {
           <div className="header">
             <div>
               <h1 className="title">Todo & 일정</h1>
-              <div className="sub">조회(필터)와 등록(폼)을 분리해서 보기 좋게</div>
+              <div className="sub">오늘의 할 일과 중요한 일정을 한눈에 확인하고, 새로운 계획을 손쉽게 추가해 보세요.</div>
             </div>
           </div>
 
-          {/* ✅ 1) 조회 섹션 (FilterPanel) */}
+          {/* ✅ 1) 등록 섹션 (TodoForm) */}
+          <section className="sectionCard" style={{ marginTop: 10, marginBottom : 14 }}>
+            <div className="sectionTitle">등록</div>
+            <TodoForm form={form} setForm={setForm} categories={categories} onCreateTodo={onCreateTodo} />
+          </section>
+
+          {/* ✅ 2) 조회 섹션 (FilterPanel) */}
           <section className="sectionCard">
             <div className="sectionTitle">조회</div>
 
-            <div className="controls" style={{ marginBottom: 0 }}>
+            <div className="controls">
               <div className="row">
                 <button className={`chip ${filter === "today" ? "active" : ""}`} onClick={() => setFilter("today")} type="button">
                   오늘
@@ -316,11 +400,7 @@ export default function MainPage() {
             </div>
           </section>
 
-          {/* ✅ 2) 등록 섹션 (TodoForm) */}
-          <section className="sectionCard" style={{ marginTop: 14 }}>
-            <div className="sectionTitle">등록</div>
-            <TodoForm form={form} setForm={setForm} categories={categories} onCreateTodo={onCreateTodo} />
-          </section>
+
 
           {/* ✅ 3) 목록 섹션 (TodoList) */}
           <section className="sectionCard" style={{ marginTop: 14 }}>
