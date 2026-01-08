@@ -120,11 +120,7 @@ async function list({ userId, date, filter, from, to }) {
 
   return prisma.todo.findMany({
     where,
-    orderBy: [
-      { isAllDay: "desc" },    // ?˜ë£¨ì¢…ì¼???„ë¡œ (?í•˜ë©??? œ)
-      { startDate: "asc" },
-      { createdAt: "desc" },
-    ],
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     include: { category: true },
   });
 }

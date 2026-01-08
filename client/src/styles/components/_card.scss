@@ -167,6 +167,15 @@
   font-size: 13px;
 }
 
+.todoSectionTitle {
+  margin: 12px 0 8px;
+  padding-top: 8px;
+  border-top: 1px dashed $border;
+  font-size: 12px;
+  font-weight: 800;
+  color: $muted;
+}
+
 
 .sectionCard {
   border: 1px solid $border;

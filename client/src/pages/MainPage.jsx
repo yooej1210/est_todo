@@ -83,13 +83,12 @@ function todoMatchesFilter(todo, filter, dateValue) {
 
 function sortTodos(list) {
   return [...list].sort((a, b) => {
-    if (!!a.isAllDay !== !!b.isAllDay) return a.isAllDay ? -1 : 1;
-    const aStart = a.startDate ? new Date(a.startDate).getTime() : Number.POSITIVE_INFINITY;
-    const bStart = b.startDate ? new Date(b.startDate).getTime() : Number.POSITIVE_INFINITY;
-    if (aStart !== bStart) return aStart - bStart;
     const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return bCreated - aCreated;
+    if (aCreated !== bCreated) return bCreated - aCreated;
+    const aId = a.id ? String(a.id) : "";
+    const bId = b.id ? String(b.id) : "";
+    return bId.localeCompare(aId);
   });
 }
 
