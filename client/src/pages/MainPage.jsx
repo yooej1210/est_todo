@@ -240,8 +240,8 @@ export default function MainPage() {
   const onSubmitEditTodo = async (id, payload) => {
     setErr("");
     try {
-      const updated = await updateTodo(id, payload);
-      setTodos((prev) => prev.map((x) => (x.id === id ? updated : x)));
+      await updateTodo(id, payload);
+      await loadAll();
       closeEditTodo();
     } catch (e) {
       showError(e?.response?.data?.message || "수정 실패");
@@ -252,8 +252,8 @@ export default function MainPage() {
     if (!editingCategory) return;
     setErr("");
     try {
-      const updated = await updateCategory(editingCategory.id, payload);
-      setCategories((prev) => prev.map((x) => (x.id === editingCategory.id ? updated : x)));
+      await updateCategory(editingCategory.id, payload);
+      await loadAll();
       closeEditCategory();
     } catch (e) {
       showError(e?.response?.data?.message || "수정 실패");
